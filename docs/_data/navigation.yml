@@ -1,0 +1,40 @@
+# main links
+docs:
+  - title: "Overview"
+    children:
+      - title: "What is NQSAP?"
+        url: /
+      - title: "Why?"
+        url: /docs/why/
+  - title: "Build"
+    children:
+      - title: "Getting Started"
+        url: /docs/getting-started/
+      - title: "Clock"
+        url: /docs/clock/
+      - title: "Registers"
+        url: /docs/registers/
+      - title: "ALU"
+        url: /docs/alu/
+      - title: "RAM"
+        url: /docs/ram/
+      - title: "Loader"
+        url: /docs/loader/
+      - title: "Ring Counter"
+        url: /docs/ring-counter/
+      - title: "Output Register"
+        url: /docs/output-register/
+      - title: "Control"
+        url: /docs/control/
+      - title: "Microcode"
+        url: /docs/microcode/
+  - title: "Wrap-up"
+    children:
+      - title: "Tips"
+        url: /docs/tips/
+      - title: "Next Steps"
+        url: /docs/next-steps/
+  - title: "Links"
+    children:
+      - title: "Code Repository"
+        url: "https://github.com/TomNisbet/test-doc2"

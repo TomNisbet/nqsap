@@ -18,8 +18,8 @@ Highlights of the design are:
 This repo contains:
 
 * [NQSAP documentation](https://tomnisbet.github.io/nqsap/)
-* Arduino-based [Microcode programmer](https://github.com/TomNisbet/nqsap/arduino-microcode) source code
-* Arduino Nano-based [System Loader / Debugger](https://github.com/TomNisbet/nqsap/arduino-loader) source code
+* Arduino-based Microcode programmer
+* Arduino Nano-based System Loader / Debugger
 
 [![NQSAP Breadboard Computer](docs/assets/images/nqsap.jpg "NQSAP breadboard computer")](assets/images/nqsap.jpg)
 

@@ -41,7 +41,7 @@ available via the USB interface:
 
 <figure class="video_container">
   <video controls="true" width="50%" allowfullscreen="true" poster="../../assets/videos/self-test.png">
-    <source src="../../assets/videos/self-test2.mp4" type="video/mp4">
+    <source src="../../assets/videos/self-test.mp4" type="video/mp4">
   </video>
 </figure>
 

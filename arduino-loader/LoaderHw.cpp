@@ -329,18 +329,19 @@ bool LoaderHw::testMemory() {
 
 bool LoaderHw::testAlu() {
     unsigned numPatterns = sizeof(patterns);
-    unsigned numOperations = sizeof(aluBinaryOperations);
+    unsigned numOperations = sizeof(aluUnaryOperations);
 
     Serial.print(F("Testing ALU unary operations: "));
     for (unsigned opIndex = 0; (opIndex < numOperations); opIndex++) {
         for (unsigned aIndex = 0; (aIndex < numPatterns); aIndex++) {
-            if (!testAluOperation(aluBinaryOperations[opIndex], aluBinaryNames[opIndex], patterns[aIndex], patterns[aIndex])) {
+            if (!testAluOperation(aluUnaryOperations[opIndex], aluUnaryNames[opIndex], patterns[aIndex], patterns[aIndex])) {
                 return false;
             }
         }
     }
     Serial.println("pass");
 
+    numOperations = sizeof(aluBinaryOperations);
     Serial.print(F("Testing ALU binary operations: "));
     for (unsigned opIndex = 0; (opIndex < numOperations); opIndex++) {
         for (unsigned aIndex = 0; (aIndex < numPatterns); aIndex++) {
@@ -381,8 +382,8 @@ uint8_t LoaderHw::aluCompute(uint8_t op, uint8_t a, uint8_t b) {
 // from the microcode ROM will be zero as well.
 uint8_t LoaderHw::localCompute(uint8_t op, uint8_t a, uint8_t b) {
     switch (op) {
-    case ALU_INC: return a + 1;
-    case ALU_SUB: return a - b - 1; // carry bit
+    case ALU_INC: return a;         // Carry bit high
+    case ALU_SUB: return a - b - 1; // Carry bit high
     case ALU_ADD: return a + b;
     case ALU_SHL: return a + a;
     case ALU_DEC: return a - 1;

@@ -516,8 +516,11 @@ void commandLoop() {
         break;
 
     case CMD_CYCLE:
-        hw.enable();
-        hw.clkPulse();
+        if (argc < 1) { a1 = 1; }
+        for (unsigned ix = 0; (ix < a1); ix++) {
+            hw.clkPulse();
+            delay(100);
+        }
         break;
 
     case CMD_DOLLAR:
@@ -548,7 +551,7 @@ void commandLoop() {
         Serial.println(F("  Gr        - Get (read) and print register value"));
         Serial.println(F("  Pr dd     - Put (write) value to register"));
         Serial.println(F("  =r1 r2    - Assign (r1=r2) copy value from register r2 to r1"));
-        Serial.println(F("  Y         - cYcle host hardware clock"));
+        Serial.println(F("  Y[cc]     - cYcle host hardware clock (with optional repeat count)"));
 
         Serial.println(F("\nMisc commands:"));
         Serial.println(F("  T         - Test host hardware"));

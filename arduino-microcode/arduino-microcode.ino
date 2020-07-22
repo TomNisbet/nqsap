@@ -258,11 +258,6 @@ uint16_t aluInstructions[] = {
 // each ROM could be burned uniquely instead.
 
 enum {
-// TODO - the build is in an intermediate state now, with space for 4 ROMs (32-bit word)
-// reserved, but only ROMs 3 and 0 are installed.  THe control word is defined as 16 bits
-// and the burn code has been hacked to burn the bits for ROM 0 into 0 and 1 and the bits
-// for ROM1 into 2 and 3.  When the other two ROMs are wired, the control word definitions
-// here (microcode_t) will be expanded to 32 bits and the burn code will burn all 4 ROMs.
     NUM_ROMS = 4,
     NUM_FLAG_COMBOS = 4,
     NUM_GROUPS = 16,

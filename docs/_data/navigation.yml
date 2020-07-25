@@ -34,6 +34,8 @@ docs:
         url: /docs/tips/
       - title: "Next Steps"
         url: /docs/next-steps/
+      - title: "Further Reading"
+        url: /docs/further-reading/
   - title: "Links"
     children:
       - title: "Code Repository"

@@ -18,5 +18,6 @@ ROM are hardwired on the NQSAP board to select the 8K section of microcode that 
 used by the chip.  This means that all of the chips are interchangeable - they are
 programmed the same and can be placed in any of the ROM slots on the NQSAP board.
 
-The source code for the microcode programmer is in the [Arduino microcode](https://github.com/TomNisbet/NQSAP/arduino-microcode) folder. This code contains all of the details of the
-microcode implementation.
+The source code for the microcode programmer is in the
+[Arduino microcode](https://github.com/TomNisbet/nqsap/tree/master/arduino-microcode)
+folder. This code contains all of the details of the microcode implementation.

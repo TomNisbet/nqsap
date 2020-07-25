@@ -24,7 +24,8 @@ dark blue.
 If starting over, I would definitely use the ValuePro wiring over the EE for this project.
 
 One other wire that was tried was
-[Velleman 10 color 24 gauge wire](https://www.amazon.com/Velleman-MOWM-Color-Solid-Mounting/dp/B001IRVDV4/).  This looked promising because it offered additional colors that could have
+[Velleman 10 color 24 gauge wire](https://www.amazon.com/Velleman-MOWM-Color-Solid-Mounting/dp/B001IRVDV4/).  
+This looked promising because it offered additional colors that could have
 been useful to call out different functions on the board, like the register read and write
 selects.  This wire was a disappointment.  It didn't hold its form as well when bent and
 the insulation discolored at all of the bend points.  I ended up removing the few pieces
@@ -50,7 +51,7 @@ touched.
 The initial build brought power into the top left side of the system and then used
 daisy-chained wires to bring power down to each breadboard.  This can still be seen on the
 boards on the right side of the photo above.  Measuring the voltage at the furthest
-boards from the power input showed a drop from 5V at the inout to 4.5V at the far-end.
+boards from the power input showed a drop from 5V at the input to 4.5V at the far-end.
 
 An extra set of breadboard buses was added to the left side of the system to distribute
 power to each board.  The give a cleaner look and also increased the voltage at the

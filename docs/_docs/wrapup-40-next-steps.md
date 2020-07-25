@@ -8,6 +8,9 @@ excerpt: "Future enhancements to the NQSAP computer"
 
 ## Hardware
 
+With the first phase of the NQSAP complete, there is still a lot of breadboard area free
+for expansion.
+
 ### Stack pointer
 
 One of the most useful additions to the existing computer would be a stack pointer and

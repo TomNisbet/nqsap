@@ -19,15 +19,30 @@ LoaderHw hw(32 * 1024L);
 XModem xmodem(hw, cmdStatus);
 
 enum {
+    NOP = 0x00,
     LDA = 0x01,
+    STA = 0x02,
+    LAI = 0x03,
     JMP = 0x04,
+    JZ  = 0x05,
+    JC  = 0x06,
     OUT = 0x07,
-    ADD = 0x29
+    JPA = 0x09,
+    HLT = 0x0f,
+    ICA = 0x20,
+    SUB = 0x26,
+    ADD = 0x29,
+    SHL = 0x2c,
+    DCA = 0x2f,
+    NOT = 0x30,
+    XOR = 0x36,
+    AND = 0x3b,
+    OR  = 0x3e
 };
 
 static const uint8_t program0[] = {
     // Count by 3
-    LDA, 10,   // start at 10
+    LAI, 10,   // start at 10
 // LOOP
     ADD, 3,    // ADD 3 to A
     OUT,       // OUT (A to display)
@@ -35,6 +50,25 @@ static const uint8_t program0[] = {
 };
 
 static const uint8_t program1[] = {
+    LAI, 1,    // start at 1
+    DCA,
+    JC, 11,
+    JZ, 15,
+// 7
+    LAI, 22,
+    OUT,
+    HLT,
+// 11
+    LAI, 33,
+    OUT,
+    HLT,
+// 15
+    LAI, 44,
+    OUT,
+    HLT
+};
+
+static const uint8_t program2[] = {
     // Memory test pattern - not an executable program
     'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
@@ -48,7 +82,8 @@ struct program_t {
 };
 static const program_t programs[] = {
     program0, sizeof(program0),
-    program1, sizeof(program1)
+    program1, sizeof(program1),
+    program2, sizeof(program2)
 };
 
 

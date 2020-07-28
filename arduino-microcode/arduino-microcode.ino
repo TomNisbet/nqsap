@@ -135,7 +135,7 @@ void loop() {
 #define IP   0b00000000000000000000000001000000L  // 40 Increment PC
 #define CR   0b00000000000000000000000000100000L  // 20 Clear Ring Counter
 #define AC   0b00000000000000000000000000010000L  // 10 ALU Carry Flag
-#define XX03 0b00000000000000000000000000001000L
+#define LF   0b00000000000000000000000000001000L  // 08 Load Flags
 #define XX02 0b00000000000000000000000000000100L
 #define XX01 0b00000000000000000000000000000010L
 #define XX00 0b00000000000000000000000000000001L
@@ -169,6 +169,7 @@ enum {
     // opcode.
     ALU_CI = 0b000100000000,
     ALU_B  = 0b001000000000,
+    ALU_MEM= 0b010000000000,
 
     // The M bit is wired from the lowest group bit in the IR to the ALU.
     ALU_GROUP_MASK =    0b01110000,
@@ -271,19 +272,23 @@ enum {
 
 typedef uint32_t microcode_t;
 
+// Note that the default conditional jump code is to increment the PC to skip the
+// address argument and clear the ring counter to execute the next instruction.  This is
+// effectively a NOP.  The customizeCodeGroup code will replace this with the microcode
+// for an unconditional jump for flag combinations that match the type of jump.
 const microcode_t template0[NUM_INSTRUCTIONS][NUM_STEPS] PROGMEM = {
 //  0   1   2         3         4        5 6 7
   { F1, F2, 0,        0,        0,       0,0,0 }, // 00 NOP
-  { F1, F2, FA,       RM|WA|N,  0,       0,0,0 }, // 01 LDA
-  { F1, F2, FA,       RA|WM|N,  0,       0,0,0 }, // 02 STA
-  { F1, F2, FA,       RM|WB|N,  0,       0,0,0 }, // 03 LDB - redundant
+  { F1, F2, FA,       RM|WMA,   RM|WA|N, 0,0,0 }, // 01 LDA
+  { F1, F2, FA,       RM|WMA,   RA|WM|N, 0,0,0 }, // 02 STA
+  { F1, F2, FA,       RM|WA|N,  0,       0,0,0 }, // 03 LDAI
   { F1, F2, FA,       RM|WP|N,  0,       0,0,0 }, // 04 JMP
-  { F1, F2, 0,        0,        0,       0,0,0 }, // 05 JZ
-  { F1, F2, 0,        0,        0,       0,0,0 }, // 06 JC
+  { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 05 JZ
+  { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 06 JC
   { F1, F2, RA|WO|N,  0,        0,       0,0,0 }, // 07 OUT
   { F1, F2, HLT,      0,        0,       0,0,0 }, // 08 HLT
+  { F1, F2, FA,       RM|WB,    RB|WP|N, 0,0,0 }, // 09 JPA (ALU mode=ADD)
   { F1, F2, HLT,      0,        0,       0,0,0 }, // 0a HLT
-  { F1, F2, FA,       RM|WB,    RB|WA|N, 0,0,0 }, // 09 ADD
   { F1, F2, HLT,      0,        0,       0,0,0 }, // 0b HLT
   { F1, F2, HLT,      0,        0,       0,0,0 }, // 0c HLT
   { F1, F2, HLT,      0,        0,       0,0,0 }, // 0d HLT
@@ -346,17 +351,22 @@ void burnAluInstructions(uint8_t groupBits) {
         if ((opcode & GROUP_MASK) == groupBits) {
             unsigned index = opcode & INSTRUCTION_MASK;
             microcode_t carry = aluInstructions[i] & ALU_CI ? AC : 0;
+            code[index][5] = code[index][6] = code[index][7] = 0;
             code[index][0] = F1;            // Fetch instruction from memory
             code[index][1] = F2;            // Opcode into IR (sets ALU mode and S bits)
             if (aluInstructions[i] & ALU_B) {
-                code[index][2] = RPI | WMA;     // Get address of operand from PC
-                code[index][3] = RM | WB;       // Read operand into B
-                code[index][4] = RB | carry | WA | N;   // Write ALU result into A
+                code[index][2] = RPI | WMA;     // Get next address from PC
+                code[index][3] = RM | WB;       // Read operand into B (immediate data)
+                code[index][4] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
+            } else if (aluInstructions[i] & ALU_MEM) {
+                    code[index][2] = RPI | WMA;     // Get next address from PC
+                    code[index][3] = RM | WMA;      // Read address of operand into MAR
+                    code[index][4] = RM | WB;       // Read operand into B
+                    code[index][5] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
             } else {
-                code[index][2] = RB | carry | WA | N;   // Write ALU result into A
+                code[index][2] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
                 code[index][3] = code[index][4] = 0;
             }
-            code[index][5] = code[index][6] = code[index][7] = 0;
         }
     }
 
@@ -552,9 +562,9 @@ bool burnByte(byte value, uint32_t address) {
 bool burnBlock(byte data[], uint32_t len, uint32_t address) {
     bool status = false;
     char cb[50];
-    sprintf(cb, "burn %02x at %04x", uint16_t(len), uint16_t(address));
-    Serial.println(cb);
-    Serial.println(address, HEX);
+//    sprintf(cb, "burn %02x at %04x", uint16_t(len), uint16_t(address));
+//    Serial.println(cb);
+//    Serial.println(address, HEX);
     if (len == 0)  return true;
 
     disableOutput();
@@ -686,6 +696,7 @@ void dump(uint16_t address, byte data[]) {
 // so the data will be broken into chunks and written using the block mode.
 bool writeData(byte data[], uint32_t len, uint32_t address)
 {
+    /*
     dump(address, data);
     dump(address+0x10, data+0x10);
     dump(address+0x20, data+0x20);
@@ -694,6 +705,7 @@ bool writeData(byte data[], uint32_t len, uint32_t address)
     dump(address+0x50, data+0x50);
     dump(address+0x60, data+0x60);
     dump(address+0x70, data+0x70);
+    */
     bool status = true;
 
     if (mBlockSize == 0) {

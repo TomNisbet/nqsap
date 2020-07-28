@@ -62,21 +62,21 @@ enum {
 // Read register is PC3-5 (pin A3-A5)
 // PC6 and PC7 (pin A6, A7) are analog input only and are not used
 enum {
-    REG_NONE= 0,    // No register selected
-    REG_MEM = 1,
-    REG_A =   2,
-    REG_B =   3,    // B and ALU share an address - B is write, ALU is read
-    REG_ALU = 3,
-    REG_PC =  6,
-    REG_MAR = 9,
-    REG_OUT = 12,
-    REG_IR =  15
+    REG_NONE= 0x00,    // No register selected
+    REG_MEM = 0x01,
+    REG_A =   0x02,
+    REG_B =   0x03,    // B and ALU share an address - B is write, ALU is read
+    REG_ALU = 0x03,
+    REG_PC =  0x06,
+    REG_MAR = 0x09,
+    REG_OUT = 0x0c,
+    REG_IR =  0x0f
 };
 
 
 static const char * registerNames[] = {
-    "NONE", "MEM", "A", "ALU/B", "4", "5", "PC", "7",
-    "8", "MAR", "10", "11", "OUT", "13", "14", "IR"
+    "NONE", "MEM", "A",  "ALU/B", "04",  "05", "PC", "07",
+    "08",   "MAR", "0a", "0b",    "OUT", "0d", "0e", "IR"
 };
 static const unsigned woRegisters[] = { REG_OUT, REG_MAR, REG_IR };
 static const unsigned rwRegisters[] = { REG_A, REG_ALU, REG_PC };
@@ -284,8 +284,11 @@ bool LoaderHw::testRegister(unsigned reg, bool isRw) {
         delayMicroseconds(2);
         selectWriteRegister(0);
         delay(100);
-        if (isRw && (readRegister(reg) != patterns[ix])) {
-            Serial.println(F("fail!"));
+        uint8_t readVal = readRegister(reg);
+        if (isRw && (readVal != patterns[ix])) {
+            char s[60];
+            sprintf(s, "failed, read=%02x, expected=%02x", readVal, patterns[ix]);
+            Serial.println(s);
             return false;
         }
     }

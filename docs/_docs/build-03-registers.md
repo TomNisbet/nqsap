@@ -20,10 +20,10 @@ connect to the ALU.
 Note that, because the B register is write-only, it does not need a 74245 to control its
 access to the bus.
 
-The 74574 also lacks a gated input to control the loading of data.  An external NAND gate
-was required to only provide a clock pulse to the chip when its write line is asserted
-from the control logic.  Only one gate from the chip was needed, so the others three NAND
-gates are available for use elsewhere.
+The 74574 lacks a gated input to control the loading of data.  An external NAND gate was
+required to only provide a clock pulse to the chip when its write line is asserted from
+the control logic.  Only one gate from the chip was needed, so the others three NAND gates
+are available for use elsewhere.
 
 One thing that needed to be considered for the B register design was the spacing required
 for the 8 status LEDs that go with each register.  With the two-chip 74173 layout, the

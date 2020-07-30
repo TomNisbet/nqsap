@@ -58,7 +58,7 @@ than 4 bits.
 | HHHH | **A - 1**       | A             |
 |====
 
-When using more than one ALU, the Mode and Select bits are connected to the same pins on all ALUs.  the COUT (C<sub>n+4</sub>) of the lower ALU is connected to
+When using more than one ALU, the Mode and Select bits are connected to the same sets of pins on all ALUs.  the COUT (C<sub>n+4</sub>) of the lower ALU is connected to
 the CIN (C<sub>n</sub>) of the upper ALU.  The CIN of the lower ALU is used, along with
 the Mode and Select bits, to select an operation to be performed.  The COUT of the upper
 ALU can be used, with some interpretation, to indicate an overflow of the entire
@@ -135,10 +135,10 @@ an overflow condition.
 | HHHH | A - 1     | A       |  H  |  L  |  L  |  H  |
 |====
 
-The next table shows the five operations in the case when the lower ALU has an overflow
-condition.  The only differences with the previous table are the upper ALU operations that
-are produced by the different values produced by the COUT of the lower ALU pin that is
-connected to the CIN of the upper ALU.
+The next table shows the same five operations in the case when the lower ALU has an
+overflow condition.  The only differences with the previous table are the upper ALU
+operations that are produced by the different values produced by the COUT of the lower ALU
+pin that is connected to the CIN of the upper ALU.
 
 |Selects|Lower ALU|Upper ALU|CIN<sub>L</sub>|CIN<sub>U</sub>|COUT<sub>UN</sub>|COUT<sub>UC</sub>|
 |:---: |:---:      |:---:      |:---:|:---:|:---:|:---:|

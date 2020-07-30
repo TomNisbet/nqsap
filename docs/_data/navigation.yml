@@ -34,6 +34,10 @@ docs:
         url: /docs/tips/
       - title: "Next Steps"
         url: /docs/next-steps/
+  - title: "References"
+    children:
+      - title: "74181 ALU Notes"
+        url: /docs/74181-alu-notes/
       - title: "Further Reading"
         url: /docs/further-reading/
   - title: "Links"

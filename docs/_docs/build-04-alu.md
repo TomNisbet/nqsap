@@ -25,42 +25,13 @@ In addition to the 74181 ALUs, the NQSAP ALU module needs a few more chips.  As 
 read registers in the NQSAP, a 74LS245 bus transceiver is used to selectively place the
 ALU result on the bus.  
 
-The 74181 ALU does not have an output to indicate a zero result from an operation so a few
-NOR and AND gates are used (as in the Ben Eater design) to detect all zeroes at the ALU
-output.  The ALU does have an [A=B bit](#ab_bit) that is not used in the NQSAP design.
-
 Note that the ALU result is a read-only register and the B register is write-only.  It is
 possible to read the B register (for scratch storage as part of microcode, for example)
 by setting the 74LS181 ALU operation to "B" and then reading the ALU result.  Normally,
 there would be no reason to read B because it is only used as an ALU source register and
 not as a general-purpose register.
 
-## 74LS181 / 74181 ALU notes
-
-### Pitfalls
-#### A=B Bit
-
-The A=B bit does not detect that the A and B inputs are the same.  Instead, it is active
-when all result bits are one. This can be used with the A minus 1 operation to detect
-A==0, or with A-B-1 to detect A=B, but it is not clear how all ones is useful as the
-result of operations on A and B.  A bit that detects an all zero result would be more
-useful.
-
-**NOTE:** The A=B pin is wired as low or tri-state rather than low or high, so it will
-never display anything if an LED is wired from A=B to ground.  Instead, the state can be
-observed by wiring an LED and resistor from Vcc to A=B pin. See <https://electronics.stackexchange.com/a/454342> for details.
-
-### Conflicting datasheets
-
-Several datasheets for the 74181 have errors or inconsistencies:
-* The Texas Instruments 1988 datasheet appears to be correct
-* The Fairchild 2000 datasheet has differences compared to the TI sheet
-  * the _A and not B_ operation is incorrectly listed as _A and B_
-  * the _not (A xor B)_ operation is listed as _not A xor not B_ (which would be the same
-      as just _A xor B_)
-* The Texas Instruments 1983 Databook shows the _A plus A_ operation as _A_
-
-## Useful Operations
+## 74181 ALU operations used by NQSAP
 
 |M | Cn| S3| S2| S1| S0|Operation|
 |:---:|:---:|:---:|:---:|:---:|:---:|---|
@@ -75,66 +46,64 @@ Several datasheets for the 74181 have errors or inconsistencies:
 |1 | x | 1 | 1 | 1 | 0 | A or B
 |====
 
-## All Operations
+The ALU also has an all-zero bits operation and an all-one bits operation that may be
+useful.  While there isn't a good application for these as user-accessible instructions,
+they might be helpful in the microcode to get all zeros or all ones onto the bus.  For
+example, a single-byte CLR instruction could leverage all-zero to implement a register
+clear that would be faster and move compact that using a load immediate 0 instruction.
 
-The following is a list of all possible operations of the ALU using a simplified syntax.
-All operations are spelled out explicitly, like 'or' and 'plus' instead of '+' and 'plus'
-as in the datasheets.
+## Flags
 
-### Arithmetic
-```
-M Cn S3 S2 S1 S0
-0  0  0  0  0  0  A plus 1
-0  0  0  0  0  1  (A or B) plus 1
-0  0  0  0  1  0  (A or not B) plus 1
-0  0  0  0  1  1  zero   [all zeroes]
-0  0  0  1  0  0  A plus (A and not B) plus 1
-0  0  0  1  0  1  (A or B) plus (A and not B) plus 1
-0  0  0  1  1  0  A minus B
-0  0  0  1  1  1  A and not B
-0  0  1  0  0  0  A plus (A and B) plus 1
-0  0  1  0  0  1  A plus B plus 1
-0  0  1  0  1  0  (A or not B) plus (A and B) plus 1
-0  0  1  0  1  1  A and B
-0  0  1  1  0  0  A plus A plus 1
-0  0  1  1  0  1  (A or B) plus A plus 1
-0  0  1  1  1  0  (A or not B) plus A plus 1
-0  0  1  1  1  1  A
-0  1  0  0  0  0  A
-0  1  0  0  0  1  A or B
-0  1  0  0  1  0  A or not B
-0  1  0  0  1  1  negative 1   [all ones]
-0  1  0  1  0  0  A plus (A and not B)
-0  1  0  1  0  1  (A or B) plus (A and not B)
-0  1  0  1  1  0  A minus B minus 1
-0  1  0  1  1  1  (A and not B) minus 1
-0  1  1  0  0  0  A plus (A and B)
-0  1  1  0  0  1  A plus B
-0  1  1  0  1  0  (A or not B) plus (A and B)
-0  1  1  0  1  1  (A and B) minus 1
-0  1  1  1  0  0  A plus A
-0  1  1  1  0  1  (A or B) plus A
-0  1  1  1  1  0  (A or not B) plus A
-0  1  1  1  1  1  A minus 1
-```
+A status register, containing a zero flag and a carry flag, is used to store results from
+ALU operations.  The status register is loaded by a control line from the microcode ROM.
+The two outputs of the status register drive the _A<sub>13</sub>_ and _A<sub>14</sub>_
+address lines of the microcode ROMs.
 
-### Logic
-```
-M Cn S3 S2 S1 S0
-1  x  0  0  0  0  not A
-1  x  0  0  0  1  not A or not B
-1  x  0  0  1  0  not A and B
-1  x  0  0  1  1  0
-1  x  0  1  0  0  not (A and B)
-1  x  0  1  0  1  not B
-1  x  0  1  1  0  A xor B
-1  x  0  1  1  1  A and not B
-1  x  1  0  0  0  not A or B
-1  x  1  0  0  1  not (A xor B)
-1  x  1  0  1  0  B
-1  x  1  0  1  1  A and B
-1  x  1  1  0  0  1
-1  x  1  1  0  1  A or not B
-1  x  1  1  1  0  A or B
-1  x  1  1  1  1  A
-```
+### Zero flag
+
+The 74181 ALU does not have an output to indicate a zero result from an operation so a
+few NOR and AND gates are used (as in the Ben Eater design) to detect all zeroes at the
+ALU output.  The ALU does have an _A=B_ bit that can be used for comparison operations,
+but it is not used in the NQSAP design.
+
+### Carry flag
+
+Using the carry flag output (C<sub>n+4</sub>) as a processor flag is not straightforward because the
+logic state used to indicate an overflow changes depending on the operation.  For the
+addition operations, a logic LOW indicates overflow, but logic HIGH is used for
+subtraction.  See the [74181 ALU notes](../74181-alu-notes/) section for an explanation of
+why the chip does this.
+
+|Selects|Operation|C<sub>n+4</sub> on overflow|
+|:---:  |:---:    |:---:|
+| LLLL  | A + 1   |  L  |
+| LHHL  | A - B   |  H  |
+| HLLH  | A + B   |  L  |
+| HHLL  | A + A   |  L  |
+| HHHH  | A - 1   |  H  |
+|====
+
+There are several approaches that might be used to provide conditional jumps based on the
+carry flag.  One would be to use an additional control line from the microcode ROM and an
+XOR gate to selectively invert the C<sub>n+4</sub> signal.  This requires minimal hardware
+and a small change to the microcode, but it produces a consistent flag that would be set
+on either an addition overflow or a subtraction underflow.
+
+Another possibility would be to just leave the flag as is (or always invert it) and just
+change the interpretation of the flag.  This would require the programmer to know that
+a jump on carry instruction would be used after addition instructions, but a jump on no
+carry would be used after subtraction.  This is somewhat confusing, but requires no real
+design on the computer.
+
+A follow-on to the previous method would be to add JB (jump on borrow) and JNB (jump on no
+borrow) instructions that behave oppositely of the JC and JNC instructions.  This would
+essentially create a virtual borrow flag.
+
+A final possibility would be to replace the 74173 4-bit flags register with individual D
+flip flops.  This would also require a new microcode control line, but would offer more
+control over when the flags change.  With this approach, an XOR gate on the C<sub>n</sub>
+and C<sub>n+4</sub> signals (see the [74181 ALU notes](../74181-alu-notes/)) would provide a
+normalized carry flag for the addition and subtraction operations.  The flags control
+lines would not load the carry flag for the increment and decrement operations, because
+those can easily detect overflow using the zero flag instead.  An additional advantage to
+this idea is that it allows the carry flag to be unaffected by the non-arithmetic operations, and AND and OR, where it doesn't really apply.

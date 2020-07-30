@@ -20,7 +20,7 @@ includes a wealth of other source material that leads up to the design.  This is
 written at the same beginner level as the Mims book, but it covers the subject with much
 more detail.
 
-## Links
+## Breadboard computer links
 
 These are a just a few of the other breadboard computers and interesting sites I've run
 across while building this project.  There is a large community willing to learn and share
@@ -47,3 +47,9 @@ is a very nicely constructed and well-documented extension to the SAP-1.
 The [Homebrew Computer Club](https://www.facebook.com/groups/HomebrewComputerClubUK) group
 on facebook has a lot of posts featuring 8-bit breadboard computers and other interesting
 projects.
+
+## Other links
+
+A deep dive into the 74LS181 ALU can be found on
+[Ken Shirriff's blog](http://www.righto.com/2017/03/inside-vintage-74181-alu-chip-how-it.html), including a detailed walk-through of the operations.
+For a detailed history of the 74181, see the [Apollo181 by Gianluca G.](https://apollo181.wixsite.com/apollo181/index) project.

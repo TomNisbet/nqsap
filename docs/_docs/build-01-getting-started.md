@@ -77,7 +77,8 @@ will be used.
 
 [![LED block](../../assets/images/led-block.jpg "soldered row of LEDs"){:width="400px"}](../../assets/images/led-block.jpg)
 
-To further save space and make the wiring easier, the 3mm LEDs have the cathode side legs
-bent and soldered together so that a whole row of LEDs uses only one ground connection.
-This helped in crowded areas, like the [ALU and its registers](../registers/).  Depending
-on where they were connected, rows of 4 or 8 LEDs were built.
+To save even more space and make the wiring neater and easier, the 3mm LEDs have the
+cathode side legs bent and soldered together so that a whole row of LEDs uses only one
+ground connection. This helped in crowded areas like the ALU and its registers.  See the
+before and after photos in the [Registers section](../registers/) for the difference.
+Depending on where they were connected, rows of 4 or 8 LEDs were built.

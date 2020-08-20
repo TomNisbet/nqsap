@@ -100,7 +100,7 @@ pin numbers instead of having to look away for a test result.
 
 On the other hand, some tools that would have seemed useful were needed rarely, if at all.
 The oscilliscope was only used for the clock circuit, and even then just for curiosity to
-see the results of placing filter capacitors.  The multimenter was only used to test
+see the results of placing filter capacitors.  The multimeter was only used to test
 voltage drops at the far ends of the power distribution rails.  Surprisingly, the logic
 analyzer was never used.  Any problems in the system were usually loose or misplaced wires
 that were easily found with just the logic probe.

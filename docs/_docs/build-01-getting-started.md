@@ -74,3 +74,10 @@ computer that were built later, like the Instruction Resister, use smaller 3mm L
 These were much easier to place and still provided a good brightness.  As some of the
 temporary LEDs are replaced with shorter-lead permanent LEDs, the smaller 3mm versions
 will be used.
+
+[![LED block](../../assets/images/led-block.jpg "soldered row of LEDs"){:width="400px"}](../../assets/images/led-block.jpg)
+
+To further save space and make the wiring easier, the 3mm LEDs have the cathode side legs
+bent and soldered together so that a whole row of LEDs uses only one ground connection.
+This helped in crowded areas, like the [ALU and its registers](../registers/).  Depending
+on where they were connected, rows of 4 or 8 LEDs were built.

@@ -499,6 +499,12 @@ void commandLoop() {
         break;
 
     case CMD_PUT:
+        // Note that this command will not work with the Output Register because it uses
+        // a latch instead of a clock pulse to store its data.  This command will
+        // briefly put a value on the bus (and into the output register), but immediately
+        // after the clock pulse, the loader will release the bus and the default zero
+        // value will show on the Output Register.  The Assign command will work correctly
+        // with Output because it leaves the read register on the bus upon completion.
         hw.writeRegister(a1, a2);
         break;
 

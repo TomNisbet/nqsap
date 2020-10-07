@@ -67,6 +67,7 @@ enum {
     REG_A =   0x02,
     REG_B =   0x03,    // B and ALU share an address - B is write, ALU is read
     REG_ALU = 0x03,
+    REG_SP  = 0x05,
     REG_PC =  0x06,
     REG_MAR = 0x09,
     REG_OUT = 0x0c,
@@ -75,11 +76,11 @@ enum {
 
 
 static const char * registerNames[] = {
-    "NONE", "MEM", "A",  "ALU/B", "04",  "05", "PC", "07",
+    "NONE", "MEM", "A",  "ALU/B", "04",  "SP", "PC", "07",
     "08",   "MAR", "0a", "0b",    "OUT", "0d", "0e", "IR"
 };
 static const unsigned woRegisters[] = { REG_OUT, REG_MAR, REG_IR };
-static const unsigned rwRegisters[] = { REG_A, REG_ALU, REG_PC };
+static const unsigned rwRegisters[] = { REG_A, REG_ALU, REG_PC, REG_SP };
 static unsigned numWoRegisters() { return sizeof(woRegisters) / sizeof(*woRegisters); }
 static unsigned numRwRegisters() { return sizeof(rwRegisters) / sizeof(*rwRegisters); }
 
@@ -165,7 +166,7 @@ void LoaderHw::reset() {
 
 uint8_t LoaderHw::readRegister(uint8_t reg) {
     selectReadRegister(reg);
-    delayMicroseconds(1);
+    delayMicroseconds(3);
     uint8_t data = readDataBus();
     delayMicroseconds(1);
     return data;

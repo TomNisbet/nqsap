@@ -29,6 +29,10 @@ enum {
     OUT = 0x07,
     JPA = 0x09,
     HLT = 0x0f,
+    CALL  = 0x1a,
+    RET   = 0x1b,
+    PUSH_A = 0x1c,
+    POP_A = 0x1d,
     ICA = 0x20,
     SUB = 0x26,
     ADD = 0x29,
@@ -50,6 +54,14 @@ static const uint8_t program0[] = {
 };
 
 static const uint8_t program1[] = {
+    // Memory test pattern - not an executable program
+    'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+    0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe,
+    0x00, 0xff, 0x55, 0xaa, '0',  '1',  '2',  '3'
+};
+
+static const uint8_t program2[] = {
     LAI, 1,    // start at 1
     DCA,
     JC, 11,
@@ -68,12 +80,14 @@ static const uint8_t program1[] = {
     HLT
 };
 
-static const uint8_t program2[] = {
-    // Memory test pattern - not an executable program
-    'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',
-    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-    0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe,
-    0x00, 0xff, 0x55, 0xaa, '0',  '1',  '2',  '3'
+static const uint8_t program3[] = {
+    LAI, 10,
+    PUSH_A,
+    ICA,
+    ICA,
+    OUT,
+    POP_A,
+    HLT
 };
 
 struct program_t {
@@ -83,7 +97,8 @@ struct program_t {
 static const program_t programs[] = {
     program0, sizeof(program0),
     program1, sizeof(program1),
-    program2, sizeof(program2)
+    program2, sizeof(program2),
+    program3, sizeof(program3)
 };
 
 
@@ -100,6 +115,7 @@ enum {
     CMD_INVALID,
     CMD_DUMP,
     CMD_FILL,
+    CMD_INSERT,
     CMD_GET,
     CMD_PUT,
     CMD_READ,
@@ -420,6 +436,46 @@ void burnProgram(unsigned pgmIx, uint32_t start) {
     }
 }
 
+void insertBytes(char * pCursor)
+{
+    uint32_t val;
+    uint32_t start;
+    unsigned byteCtr = 0;
+
+    enum { BLOCK_SIZE = 32 };
+    byte data[BLOCK_SIZE];
+
+    //first value returned is the starting address
+    start = getHex32(pCursor, 0);
+    while (((val = getHex32(pCursor, 0xffff)) != 0xffff) && (byteCtr < BLOCK_SIZE)) {
+        data[byteCtr++] = byte(val);
+    }
+
+    if (byteCtr > 0) {
+        if (!hw.writeData(data, byteCtr, start)) {
+            cmdStatus.error("Write failed");
+            return;
+        }
+    } else {
+        cmdStatus.error("Missing address or data");
+        return;
+    }
+    delay(100);
+
+    for (unsigned ix = 0; ix < byteCtr ; ix++) {
+        byte val = hw.readByte(start + ix);
+        if (val != data[ix]) {
+            cmdStatus.error("Verify failed");
+            cmdStatus.setValueHex(0, "addr", start + ix);
+            cmdStatus.setValueHex(1, "read", val);
+            cmdStatus.setValueHex(2, "expected", data[ix]);
+            return;
+        }
+    }
+    cmdStatus.info(" successful");
+}
+
+
 /*
 G5 - get r5 into $ and print
 P6 2f- put value 2f into r6 - can use $ for value
@@ -446,6 +502,7 @@ byte parseCommand(char c)
         case 'd':  cmd = CMD_DUMP;      break;
         case 'f':  cmd = CMD_FILL;      break;
         case 'g':  cmd = CMD_GET;       break;
+        case 'i':  cmd = CMD_INSERT;    break;
         case 'p':  cmd = CMD_PUT;       break;
         case 'r':  cmd = CMD_READ;      break;
         case 'q':  cmd = CMD_QUIT;      break;
@@ -506,6 +563,10 @@ void commandLoop() {
         // value will show on the Output Register.  The Assign command will work correctly
         // with Output because it leaves the read register on the bus upon completion.
         hw.writeRegister(a1, a2);
+        break;
+
+    case CMD_INSERT:
+        insertBytes(line + 1);
         break;
 
     case CMD_EXAMINE:

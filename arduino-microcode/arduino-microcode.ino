@@ -71,8 +71,9 @@ void setup() {
     digitalWrite(GREEN_LED, LOW);
 
     Serial.begin(115200);
-
+    Serial.println("");
     burnMicrocodeRoms();
+    Serial.println(F("burn complete"));
 }
 
 void loop() {
@@ -90,7 +91,7 @@ void loop() {
 #define WA   0b00100000000000000000000000000000L  // 2 Write A
 #define WB   0b00110000000000000000000000000000L  // 3 Write B (ALU operand)
 #define WX4  0b01000000000000000000000000000000L  // 4
-#define WX5  0b01010000000000000000000000000000L  // 5
+#define WS   0b01010000000000000000000000000000L  // 5 Write SP
 #define WP   0b01100000000000000000000000000000L  // 6 Write PC (Jump)
 #define WX7  0b01110000000000000000000000000000L  // 7
 #define WX8  0b10000000000000000000000000000000L  // 8
@@ -98,19 +99,21 @@ void loop() {
 #define WXA  0b10100000000000000000000000000000L  // A
 #define WXB  0b10110000000000000000000000000000L  // B
 #define WO   0b11000000000000000000000000000000L  // C Write Output
-#define WMD  0b11010000000000000000000000000000L  // D
+#define WXD  0b11010000000000000000000000000000L  // D
 #define WXE  0b11100000000000000000000000000000L  // E
 #define WI   0b11110000000000000000000000000000L  // F Write IR
-                                                  //
+
 #define RM   0b00000001000000000000000000000000L  // 1 Read Memory
 #define RA   0b00000010000000000000000000000000L  // 2 Read A
 #define RB   0b00000011000000000000000000000000L  // 3 Read B (ALU result)
 #define RX4  0b00000100000000000000000000000000L  // 4
-#define RX5  0b00000101000000000000000000000000L  // 5
+#define RS   0b00000101000000000000000000000000L  // Read SP
 #define RP   0b00000110000000000000000000000000L  // 6 Read PC
 #define RX7  0b00000111000000000000000000000000L  // 7
 
 // ROM2
+// TODO not used now - burnInstructionGroup hard-coded to write test
+// patterns into the ROM2 space
 #define XX27 0b00000000100000000000000000000000L
 #define XX26 0b00000000010000000000000000000000L
 #define XX25 0b00000000001000000000000000000000L
@@ -127,8 +130,8 @@ void loop() {
 #define XX14 0b00000000000000000001000000000000L
 #define XX13 0b00000000000000000000100000000000L
 #define XX12 0b00000000000000000000010000000000L
-#define XX11 0b00000000000000000000001000000000L
-#define XX10 0b00000000000000000000000100000000L
+#define SPI  0b00000000000000000000001000000000L  // 02 Stack Pointer inc (dec)
+#define SCE  0b00000000000000000000000100000000L  // 01 SP count enable
 
 // ROM0
 #define HLT  0b00000000000000000000000010000000L  // 80 Halt
@@ -143,9 +146,10 @@ void loop() {
 #define N  CR           // Shorthand for start next instruction
 #define RPI  RP | IP    // Shorthand for Read PC and post increment
 #define F1  RPI | WMA   // Instruction fetch step 1
-#define F2  RM | WI     // Instruction fetch step 2
+#define F2  RM  | WI    // Instruction fetch step 2
 #define FA  RPI | WMA   // Fetch argument (operand) step 1
-
+#define SI  SCE | SPI   // Stack Pointer increment
+#define SD  SCE | SPI   // Stack Pointer decrement
 enum {
     // Status flag bits.  These are based at the least significant bit position, not at
     // their position in the address word.  These values can be used when iterating
@@ -173,8 +177,8 @@ enum {
 
     // The M bit is wired from the lowest group bit in the IR to the ALU.
     ALU_GROUP_MASK =    0b01110000,
-    ALU_LOGIC =         0b00110000,
     ALU_ARITH =         0b00100000,
+    ALU_LOGIC =         0b00110000,
 
     ALU_M =             0b00010000,
     ALU_S3 =            0b00001000,
@@ -193,18 +197,25 @@ enum {
     IN_JZ  = 0x05,
     IN_JC  = 0x06,
     IN_OUT = 0X07,
+
+    IN_JMP_A = 0x09,
+
     IN_HLT = 0x0f,
 
     // 10 -1f  General
+    IN_CALL  = 0x1a,                                        // this opcode is ALU B
+    IN_RET   = 0x1b,
+    IN_PUSH_A = 0x1c,
+    IN_POP_A = 0x1d,
 
-    // 30 - 3f   ALU Arithmetic
+    // 20 - 2f   ALU Arithmetic
     IN_INC = ALU_ARITH,                                     // 20 - A plus 1
     IN_SUB = ALU_ARITH          | ALU_S2 | ALU_S1,          // 26 - A minus B
     IN_ADD = ALU_ARITH | ALU_S3                   | ALU_S0, // 29 - A plus B
     IN_SHL = ALU_ARITH | ALU_S3 | ALU_S2,                   // 2c - A + A
     IN_DEC = ALU_ARITH | ALU_S3 | ALU_S2 | ALU_S1 | ALU_S0, // 2f - A minus 1
 
-    // 20 - 2f  ALU Logic
+    // 30 - 3f  ALU Logic
     IN_NOT = ALU_LOGIC,                                     // 30 - not A
     IN_XOR = ALU_LOGIC          | ALU_S2 | ALU_S1,          // 36 - A xor B
     IN_AND = ALU_LOGIC | ALU_S3          | ALU_S1 | ALU_S0, // 3b - A and B
@@ -271,30 +282,55 @@ enum {
 };
 
 typedef uint32_t microcode_t;
+typedef microcode_t template_t[NUM_INSTRUCTIONS][NUM_STEPS];
 
 // Note that the default conditional jump code is to increment the PC to skip the
 // address argument and clear the ring counter to execute the next instruction.  This is
 // effectively a NOP.  The customizeCodeGroup code will replace this with the microcode
 // for an unconditional jump for flag combinations that match the type of jump.
-const microcode_t template0[NUM_INSTRUCTIONS][NUM_STEPS] PROGMEM = {
+
+//const microcode_t template0[NUM_INSTRUCTIONS][NUM_STEPS] PROGMEM = {
+const template_t template0 PROGMEM = {
 //  0   1   2         3         4        5 6 7
   { F1, F2, 0,        0,        0,       0,0,0 }, // 00 NOP
   { F1, F2, FA,       RM|WMA,   RM|WA|N, 0,0,0 }, // 01 LDA
   { F1, F2, FA,       RM|WMA,   RA|WM|N, 0,0,0 }, // 02 STA
   { F1, F2, FA,       RM|WA|N,  0,       0,0,0 }, // 03 LDAI
   { F1, F2, FA,       RM|WP|N,  0,       0,0,0 }, // 04 JMP
-  { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 05 JZ
+  { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 05 JZ // TODO use T2?
   { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 06 JC
   { F1, F2, RA|WO|N,  0,        0,       0,0,0 }, // 07 OUT
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 08 HLT
+  { F1, F2, HLT,      0,        0,       0,0,0 }, // 08
   { F1, F2, FA,       RM|WB,    RB|WP|N, 0,0,0 }, // 09 JPA (ALU mode=ADD)
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0a HLT
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0b HLT
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0c HLT
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0d HLT
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0e HLT
+  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0a
+  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0b
+  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0c
+  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0d
+  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0e
   { F1, F2, HLT,      0,        0,       0,0,0 }  // 0f HLT
 };
+
+const template_t template1 PROGMEM = {
+//  0   1   2         3         4        5         6        7
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 10
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 11
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 12
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 13
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 14
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 15
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 16
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 17
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 18
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 19
+  { F1, F2, FA,       RM|WB,    RS|WMA,  WM|RP|SI, RB|WS|N, 0 }, // 1a CALL
+  { F1, F2, RS|WMA,   RM|WP|N,  0,       0,        0,       0 }, // 1b RET
+  { F1, F2, RS|WMA,   RA|WM|SI|N, 0,     0,        0,       0 }, // 1c PUSH_A
+  { F1, F2, SD,       RS|WMA,   RM|WA|N, 0,        0,       0 }, // 1d POP_A
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 1e
+  { F1, F2, HLT,      0,        0,       0,        0,       0 }  // 1f
+};
+
+const template_t * templates[] = { &template0, &template1 };
 
 // A buffer to hold a group of instruction microcode words that have been
 // built from a template or from the ALU building code.
@@ -332,7 +368,10 @@ uint8_t makeOpcode(uint8_t group, uint8_t instr) {
     return makeGroupBits(group) | instr;
 }
 
-void burnAluInstructions(uint8_t groupBits) {
+void burnAluInstructions(uint8_t groupBits, const char * groupName) {
+    Serial.print("ALU ");
+    Serial.println(groupName);
+
     // Initialize the buffer with a HLT instruction.
     for (int i = 0; (i < NUM_INSTRUCTIONS); i++) {
         code[i][0] = F1;
@@ -408,10 +447,11 @@ void customizeCodeGroup(uint16_t flags, uint16_t group) {
 // Slice a group of 32-bit instruction control words into individual 8-bit chunks and
 // burn them into the appropriate position in the ROM.
 void burnInstructionGroup(uint16_t group) {
-    // TODO - template is hard-coded to burn only group 0.  Need to extend template to
-    // an array to accomodate more groups if needed.
+    Serial.print("Group ");
+    Serial.println(group);
+
     for (uint16_t flags = 0; (flags < NUM_FLAG_COMBOS); flags++) {
-        memcpy_P(code, template0, sizeof(code));
+        memcpy_P(code, templates[group], sizeof(code));
         customizeCodeGroup(flags, group);
         burnCodeBuffer(flags, makeGroupBits(group));
     }
@@ -422,22 +462,17 @@ void burnCodeBuffer(uint16_t flags, uint16_t groupBits) {
         uint16_t shift = rom << 3;  // Shift 8 bits for each ROM position
         for (int instr = 0; instr < NUM_INSTRUCTIONS; instr++) {
             for (int step = 0; step < NUM_STEPS; step++) {
-                if ((rom == 1) || (rom == 2)) {
+                if (rom == 2) {
+                    // TODO - not using ROM2 yet, so burn test patterns into it
                     burnBuffer[instr * NUM_STEPS + step] = uint8_t(testCode[instr][step] >> shift);
                 } else {
                     burnBuffer[instr * NUM_STEPS + step] = uint8_t(code[instr][step] >> shift);
                 }
             }
         }
-        //writeData(burn_buffer, sizeof(burnBuffer), makeAddress(rom, flags, group));
-        // TODO: this is a hack!
-        // Only two ROMs are currently wired, but they are addressed as ROM0 and ROM3
-        // instead of ROM0 and ROM1.  Burn the code for 0 into 0 and burn the code for 1
-        // into 3.
         if (!writeData(burnBuffer, sizeof(burnBuffer), makeAddress(rom, flags, groupBits))) {
             Serial.println("FAILED!");
         }
-//        writeData(burnBuffer, sizeof(burnBuffer), makeAddress(rom * 2 + 1, flags, groupBits));
     }
 }
 
@@ -455,22 +490,10 @@ void burnMicrocodeRoms() {
         }
     }
 
-    Serial.println("Group 0");
     burnInstructionGroup(0);
-    /*
-    word addr;
-    for (int instr = 0; instr < NUM_INSTRUCTIONS; instr++) {
-        for (int step = 0; step < NUM_STEPS; step++) {
-            addr = instr << 3 | step;
-            burnByte(template0[instr][step] >> 8, addr);
-            burnByte(template0[instr][step] & 0xff, addr | 0x2000);
-        }
-    }
-*/
-    Serial.println("\nALU L");
-    burnAluInstructions(ALU_LOGIC);
-    Serial.println("\nALU A");
-    burnAluInstructions(ALU_ARITH);
+    burnInstructionGroup(1);
+    burnAluInstructions(ALU_LOGIC, "Logical");
+    burnAluInstructions(ALU_ARITH, "Arithmetic");
 #else
     // walking bit test for ROM0 to test control bits
     uint8_t bit = 1;
@@ -496,8 +519,8 @@ void burnMicrocodeRoms() {
 
 
 
-const uint32_t mSize = 32 * 1024L;       // Size of the device, in bytes
-const unsigned int mBlockSize = 0;    // Block size for page writes, zero if N/A
+const uint32_t mSize = 32 * 1024L;      // Size of the device, in bytes
+const unsigned int mBlockSize = 64;     // Block size for page writes, zero if N/A
 const unsigned int mMaxWriteTime = 10;  // Max time (in ms) to wait for write cycle to complete
 
 // Write the special six-byte code to turn off Software Data Protection.
@@ -604,14 +627,18 @@ bool waitForWriteCycleEnd(byte lastValue) {
     setDataBusMode(INPUT);
     delayMicroseconds(1);
     for (int readCount = mMaxWriteTime * 1000 / 2; (readCount > 0); readCount--) {
+        enableChip();
         enableOutput();
         delayMicroseconds(1);
         byte b1 = readDataBus();
         disableOutput();
+        disableChip();
+        enableChip();
         enableOutput();
         delayMicroseconds(1);
         byte b2 = readDataBus();
         disableOutput();
+        disableChip();
         if ((b1 == b2) && (b1 == lastValue)) {
             return true;
         }
@@ -724,8 +751,6 @@ bool writeData(byte data[], uint32_t len, uint32_t address)
             // the first block to fit within a single block.
             chunkSize = mBlockSize - (address & (mBlockSize - 1));
             chunkSize = (chunkSize > len) ? len : chunkSize;
-            Serial.print("burnBlock1 a=");
-            Serial.println(address, HEX);
             if (burnBlock(data, chunkSize, address) == false) {
                 return false;
             }
@@ -737,8 +762,6 @@ bool writeData(byte data[], uint32_t len, uint32_t address)
         // or remaining length, whichever is smaller.
         while (len > 0) {
             chunkSize = (len > mBlockSize) ? mBlockSize : len;
-            Serial.print("burnBlock2 a=");
-            Serial.println(address, HEX);
             if (burnBlock(data + offset, chunkSize, address + offset) == false) {
                 status = false;
                 break;

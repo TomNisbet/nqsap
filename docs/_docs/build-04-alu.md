@@ -42,15 +42,18 @@ not as a general-purpose register.
 |0 | 1 | 1 | 1 | 1 | 1 | A minus 1
 |1 | x | 0 | 0 | 0 | 0 | not A
 |1 | x | 0 | 1 | 1 | 0 | A xor B
+|1 | x | 1 | 0 | 1 | 0 | B
 |1 | x | 1 | 0 | 1 | 1 | A and B
 |1 | x | 1 | 1 | 1 | 0 | A or B
 |====
 
-The ALU also has an all-zero bits operation and an all-one bits operation that may be
-useful.  While there isn't a good application for these as user-accessible instructions,
-they might be helpful in the microcode to get all zeros or all ones onto the bus.  For
-example, a single-byte CLR instruction could leverage all-zero to implement a register
-clear that would be faster and move compact that using a load immediate 0 instruction.
+The B operation is not used by a standalone instruction, but the ALU functionality of it
+is used by the CALL instruction so that B can be used for temporary storage.  The ALU also
+has an all-zero bits operation and an all-one bits operation that may be useful.  While
+there isn't a good application for these as user-accessible instructions, they might be
+helpful in the microcode to get all zeros or all ones onto the bus.  For example, a
+single-byte CLR instruction could leverage all-zero to implement a register clear that
+would be faster and more compact that using a load immediate 0 instruction.
 
 ## Flags
 

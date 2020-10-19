@@ -1,5 +1,5 @@
 ---
-title: "Registers"
+title: "Stack Pointer"
 permalink: /docs/stack-pointer/
 excerpt: "Building the stack pointer of the NQSAP computer"
 ---

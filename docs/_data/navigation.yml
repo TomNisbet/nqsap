@@ -28,6 +28,8 @@ docs:
         url: /docs/control/
       - title: "Microcode"
         url: /docs/microcode/
+      - title: "Stack Pointer"
+        url: /docs/stack-pointer/
   - title: "Wrap-up"
     children:
       - title: "Tips"

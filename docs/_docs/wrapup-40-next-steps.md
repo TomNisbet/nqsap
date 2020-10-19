@@ -11,7 +11,7 @@ excerpt: "Future enhancements to the NQSAP computer"
 With the first phase of the NQSAP complete, there is still a lot of breadboard area free
 for expansion.
 
-### Stack pointer
+### Stack pointer (added Nov 2020)
 
 One of the most useful additions to the existing computer would be a stack pointer and
 its associated CALL, RET, PUSH, and POP instructions.  The hardware should be simple -
@@ -39,6 +39,19 @@ One tricky part of memory expansion is the CALL and RET instructions.  If the ad
 16 bits and the memory is only 8 bits wide, the PC could overflow into the next page
 while incrementing to get the second part of the call address.  This makes pushing the
 return address more difficult.
+
+### Memory segmentation
+
+One simple way to increase available memory is to use separate memory areas for program,
+data, and stack.  The 32K RAM chip is only using eight of the fifteen available address
+lines to access only 256 bytes of memory.  Wiring two of the available address lines to
+microcode ROM control lines would let the stack use its own dedicated 256 byte memory area
+and separate areas could be used for program and data storage as well.
+
+This Harvard-like architecture would mean that the NQSAP would not support self-modifying
+code because the load and store operations would not be able to access program storage.
+It also means that the Loader would not be able to initialize data in the memory area
+unless it is able to access another control signal to select memory areas.
 
 ## Microcode
 

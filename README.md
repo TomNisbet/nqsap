@@ -14,6 +14,7 @@ Highlights of the design are:
 * Arduino-based loader/debugger to load programs and run interactive diagnostics
 * 3-to-8 Decoders for register selection simplifies wiring and reduces the number of
   microcode bits needed while also protecting against inadvertent bus collisions
+* 8-bit Stack Pointer for storage and subroutines
 
 This repo contains:
 
@@ -26,9 +27,9 @@ This repo contains:
 |                 |     |              |
 |:---             |:---:|          ---:|
 | Clock           | bus |PC            |
-|MAR              |     |              |
+|SP      /  MAR   |     |              |
 |Memory           |     |A Register    |
-|Reset / Loader   |     |ALU           |
-|Output / IR      |     |ALU B Register|
-|Ring Counter     |     |              |
+|Reset   /  Loader|     |ALU           |
+|Output  /  IR    |     |ALU B Register|
+|Ring Ctr / Addr  |     |              |
 |uCode ROMs       |     |Control LEDs  |

@@ -6,7 +6,7 @@
 #include "XModem.h"
 
 
-static const char * MY_VERSION = "2.0";
+static const char * MY_VERSION = "2.1";
 
 
 // Global status
@@ -19,34 +19,38 @@ LoaderHw hw(32 * 1024L);
 XModem xmodem(hw, cmdStatus);
 
 enum {
-    NOP = 0x00,
-    LDA = 0x01,
-    STA = 0x02,
-    LAI = 0x03,
-    JMP = 0x04,
-    JZ  = 0x05,
-    JC  = 0x06,
-    OUT = 0x07,
-    JPA = 0x09,
-    HLT = 0x0f,
-    CALL  = 0x1a,
-    RET   = 0x1b,
-    PUSH_A = 0x1c,
-    POP_A = 0x1d,
-    ICA = 0x20,
+    NOP = 0x00,      // no operation
+    LDA = 0x01,      // load A from memory
+    STA = 0x02,      // store A to memory
+    LIA = 0x03,      // load immediate to A
+    JMP = 0x04,      // jump
+    JZ  = 0x05,      // jump if zero
+    JC  = 0x06,      // jump if carry
+    OUT = 0X07,      // output A
+    JMPIA = 0x09,    // jump immediate+A
+    HLT = 0x0f,      // halt
+    LIS  = 0x10,     // load immediate to SP
+    TAS  = 0x11,     // transfer A to SP
+    TSA  = 0x12,     // transfer SP to A
+    JSR  = 0x1a,     // jump to subroutine        * this opcode is ALU B *
+    RTS  = 0x1b,     // return from subroutine
+    PHA  = 0x1c,     // push A
+    PLA  = 0x1d,     // pull A
+
+    INC = 0x20,
     SUB = 0x26,
     ADD = 0x29,
-    SHL = 0x2c,
-    DCA = 0x2f,
+    ASL = 0x2c,
+    DCA = 0x2f,     // ** "DEC" conflicts with Arduino definitions **
     NOT = 0x30,
-    XOR = 0x36,
+    EOR = 0x36,
     AND = 0x3b,
     OR  = 0x3e
 };
 
 static const uint8_t program0[] = {
     // Count by 3
-    LAI, 10,   // start at 10
+    LIA, 10,   // start at 10
 // LOOP
     ADD, 3,    // ADD 3 to A
     OUT,       // OUT (A to display)
@@ -62,32 +66,49 @@ static const uint8_t program1[] = {
 };
 
 static const uint8_t program2[] = {
-    LAI, 1,    // start at 1
-    DCA,
+    LIA, 1,    // start at 1
+    DEC,
     JC, 11,
     JZ, 15,
 // 7
-    LAI, 22,
+    LIA, 22,
     OUT,
     HLT,
 // 11
-    LAI, 33,
+    LIA, 33,
     OUT,
     HLT,
 // 15
-    LAI, 44,
+    LIA, 44,
     OUT,
     HLT
 };
 
 static const uint8_t program3[] = {
-    LAI, 10,
-    PUSH_A,
-    ICA,
-    ICA,
-    OUT,
-    POP_A,
+    LIA, 10,    // Test stack - load value to A and push, change A, pop
+    PHA,
+    INC,
+    INC,
+    PLA,
     HLT
+};
+
+static const uint8_t program4[] = {
+    LIS, 0x80,
+    LIA, 0,
+// LOOP
+    ADD, 5,    // ADD 5 to A
+    JSR, 16,   // OUT (A to display)
+    JMP, 4,    // JMP back to LOOP
+    NOP,NOP,NOP,NOP,NOP,NOP,
+    PHA,
+    OUT,
+    DCA,
+    OUT,
+    DCA,
+    OUT,
+    PLA,
+    RTS
 };
 
 struct program_t {
@@ -98,7 +119,8 @@ static const program_t programs[] = {
     program0, sizeof(program0),
     program1, sizeof(program1),
     program2, sizeof(program2),
-    program3, sizeof(program3)
+    program3, sizeof(program3),
+    program4, sizeof(program4)
 };
 
 

@@ -1,6 +1,6 @@
 #include "Arduino.h"
 
-static const char * MY_VERSION = "1.0";
+static const char * MY_VERSION = "1.2";
 
 // IO lines for the EEPROM device control
 // Pins D2..D9 are used for the data bus.
@@ -71,19 +71,36 @@ void setup() {
     digitalWrite(GREEN_LED, LOW);
 
     Serial.begin(115200);
-    Serial.println("");
+    Serial.print("\nBurning NQSAP microcode version ");
+    Serial.println(MY_VERSION);
     burnMicrocodeRoms();
     Serial.println(F("burn complete"));
 }
 
 void loop() {
-  digitalWrite(RED_LED, HIGH);
-  delay(200);
-  digitalWrite(RED_LED, LOW);
-  delay(200);
+    digitalWrite(RED_LED, HIGH);
+    delay(500);
+    digitalWrite(RED_LED, LOW);
+    delay(500);
 }
 
-
+void fail() {
+    Serial.println(F("Write FAILED"));
+    while (1) {
+      digitalWrite(RED_LED, HIGH);
+      delay(200);
+      digitalWrite(RED_LED, LOW);
+      delay(200);
+      digitalWrite(RED_LED, HIGH);
+      delay(200);
+      digitalWrite(RED_LED, LOW);
+      delay(200);
+      digitalWrite(RED_LED, HIGH);
+      delay(200);
+      digitalWrite(RED_LED, LOW);
+      delay(500);
+    }
+}
 //               ROM3    ROM2    ROM1    ROM0
 //             +------++------++------++------+
 // ROM3        WWWWxRRR765432107654321076543210
@@ -149,7 +166,7 @@ void loop() {
 #define F2  RM  | WI    // Instruction fetch step 2
 #define FA  RPI | WMA   // Fetch argument (operand) step 1
 #define SI  SCE | SPI   // Stack Pointer increment
-#define SD  SCE | SPI   // Stack Pointer decrement
+#define SD  SCE         // Stack Pointer decrement
 enum {
     // Status flag bits.  These are based at the least significant bit position, not at
     // their position in the address word.  These values can be used when iterating
@@ -189,35 +206,38 @@ enum {
 
 enum {
     // 00 - 0f   General
-    IN_NOP = 0x00,
-    IN_LDA = 0x01,
-    IN_STA = 0x02,
-    IN_LDB = 0x03,
-    IN_JMP = 0x04,
-    IN_JZ  = 0x05,
-    IN_JC  = 0x06,
-    IN_OUT = 0X07,
+    IN_NOP = 0x00,      // no operation
+    IN_LDA = 0x01,      // load A from memory
+    IN_STA = 0x02,      // store A to memory
+    IN_LIA = 0x03,      // load immediate to A
+    IN_JMP = 0x04,      // jump
+    IN_JZ  = 0x05,      // jump if zero
+    IN_JC  = 0x06,      // jump if carry
+    IN_OUT = 0X07,      // output A
 
-    IN_JMP_A = 0x09,
+    IN_JMPIA = 0x09,    // jump immediate+A
 
-    IN_HLT = 0x0f,
+    IN_HLT = 0x0f,      // halt
 
     // 10 -1f  General
-    IN_CALL  = 0x1a,                                        // this opcode is ALU B
-    IN_RET   = 0x1b,
-    IN_PUSH_A = 0x1c,
-    IN_POP_A = 0x1d,
+    IN_LIS  = 0x10,     // load immediate to SP
+    IN_TAS  = 0x11,     // transfer A to SP
+    IN_TSA  = 0x12,     // transfer SP to A
+    IN_JSR  = 0x1a,     // jump to subroutine        * this opcode is ALU B *
+    IN_RTS  = 0x1b,     // return from subroutine
+    IN_PHA  = 0x1c,     // push A
+    IN_PLA  = 0x1d,     // pull A
 
     // 20 - 2f   ALU Arithmetic
     IN_INC = ALU_ARITH,                                     // 20 - A plus 1
     IN_SUB = ALU_ARITH          | ALU_S2 | ALU_S1,          // 26 - A minus B
     IN_ADD = ALU_ARITH | ALU_S3                   | ALU_S0, // 29 - A plus B
-    IN_SHL = ALU_ARITH | ALU_S3 | ALU_S2,                   // 2c - A + A
+    IN_ASL = ALU_ARITH | ALU_S3 | ALU_S2,                   // 2c - A + A
     IN_DEC = ALU_ARITH | ALU_S3 | ALU_S2 | ALU_S1 | ALU_S0, // 2f - A minus 1
 
     // 30 - 3f  ALU Logic
     IN_NOT = ALU_LOGIC,                                     // 30 - not A
-    IN_XOR = ALU_LOGIC          | ALU_S2 | ALU_S1,          // 36 - A xor B
+    IN_EOR = ALU_LOGIC          | ALU_S2 | ALU_S1,          // 36 - A xor B
     IN_AND = ALU_LOGIC | ALU_S3          | ALU_S1 | ALU_S0, // 3b - A and B
     IN_OR  = ALU_LOGIC | ALU_S3 | ALU_S2 | ALU_S1           // 3e - A or B
 
@@ -234,12 +254,12 @@ uint16_t aluInstructions[] = {
     IN_INC,                     // A + 1
     IN_SUB | ALU_B,             // A - B
     IN_ADD | ALU_B | ALU_CI,    // A + B
-    IN_SHL         | ALU_CI,    // A + A (shift left)
+    IN_ASL         | ALU_CI,    // A + A (shift left)
     IN_DEC         | ALU_CI,    // A - 1
 
     // 30 - 3f  ALU Logic
     IN_NOT,                     // NOT A
-    IN_XOR | ALU_B,             // A xor B
+    IN_EOR | ALU_B,             // A xor B
     IN_AND | ALU_B,             // A and B
     IN_OR  | ALU_B              // A or B
 };
@@ -291,43 +311,43 @@ typedef microcode_t template_t[NUM_INSTRUCTIONS][NUM_STEPS];
 
 //const microcode_t template0[NUM_INSTRUCTIONS][NUM_STEPS] PROGMEM = {
 const template_t template0 PROGMEM = {
-//  0   1   2         3         4        5 6 7
-  { F1, F2, 0,        0,        0,       0,0,0 }, // 00 NOP
-  { F1, F2, FA,       RM|WMA,   RM|WA|N, 0,0,0 }, // 01 LDA
-  { F1, F2, FA,       RM|WMA,   RA|WM|N, 0,0,0 }, // 02 STA
-  { F1, F2, FA,       RM|WA|N,  0,       0,0,0 }, // 03 LDAI
-  { F1, F2, FA,       RM|WP|N,  0,       0,0,0 }, // 04 JMP
-  { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 05 JZ // TODO use T2?
-  { F1, F2, 0,        IP|N,     0,       0,0,0 }, // 06 JC
-  { F1, F2, RA|WO|N,  0,        0,       0,0,0 }, // 07 OUT
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 08
-  { F1, F2, FA,       RM|WB,    RB|WP|N, 0,0,0 }, // 09 JPA (ALU mode=ADD)
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0a
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0b
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0c
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0d
-  { F1, F2, HLT,      0,        0,       0,0,0 }, // 0e
-  { F1, F2, HLT,      0,        0,       0,0,0 }  // 0f HLT
+//  0   1   2         3           4        5 6 7
+  { F1, F2, 0,        0,          0,       0,0,0 }, // 00 NOP
+  { F1, F2, FA,       RM|WMA,     RM|WA|N, 0,0,0 }, // 01 LDA
+  { F1, F2, FA,       RM|WMA,     RA|WM|N, 0,0,0 }, // 02 STA
+  { F1, F2, FA,       RM|WA|N,    0,       0,0,0 }, // 03 LDAI
+  { F1, F2, FA,       RM|WP|N,    0,       0,0,0 }, // 04 JMP
+  { F1, F2, 0,        IP|N,       0,       0,0,0 }, // 05 JZ // TODO use T2?
+  { F1, F2, 0,        IP|N,       0,       0,0,0 }, // 06 JC
+  { F1, F2, RA|WO|N,  0,          0,       0,0,0 }, // 07 OUTA
+  { F1, F2, HLT,      0,          0,       0,0,0 }, // 08
+  { F1, F2, FA,       RM|WB,      RB|WP|N, 0,0,0 }, // 09 JMPIA  ** ALU op=ADD **
+  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0a
+  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0b
+  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0c
+  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0d
+  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0e
+  { F1, F2, HLT,      0,          0,       0,0,0 }  // 0f HLT
 };
 
 const template_t template1 PROGMEM = {
-//  0   1   2         3         4        5         6        7
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 10
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 11
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 12
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 13
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 14
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 15
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 16
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 17
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 18
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 19
-  { F1, F2, FA,       RM|WB,    RS|WMA,  WM|RP|SI, RB|WS|N, 0 }, // 1a CALL
-  { F1, F2, RS|WMA,   RM|WP|N,  0,       0,        0,       0 }, // 1b RET
-  { F1, F2, RS|WMA,   RA|WM|SI|N, 0,     0,        0,       0 }, // 1c PUSH_A
-  { F1, F2, SD,       RS|WMA,   RM|WA|N, 0,        0,       0 }, // 1d POP_A
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }, // 1e
-  { F1, F2, HLT,      0,        0,       0,        0,       0 }  // 1f
+//  0   1   2         3           4        5         6        7
+  { F1, F2, FA,       RM|WS|N,    0,       0,        0,       0 }, // 10 LDSI
+  { F1, F2, RA|WS|N,  0,          0,       0,        0,       0 }, // 11 TSA
+  { F1, F2, RS|WA|N,  0,          0,       0,        0,       0 }, // 12 TAS
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 13
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 14
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 15
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 16
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 17
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 18
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 19
+  { F1, F2, FA,       RM|WB,      RS|WMA,  WM|RP|SI, RB|WP|N, 0 }, // 1a JSR
+  { F1, F2, SD,       RS|WMA,     RM|WP|N, 0,        0,       0 }, // 1b RTS
+  { F1, F2, RS|WMA,   RA|WM|SI|N, 0,       0,        0,       0 }, // 1c PHA
+  { F1, F2, SD,       RS|WMA,     RM|WA|N, 0,        0,       0 }, // 1d PLA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 1f
 };
 
 const template_t * templates[] = { &template0, &template1 };
@@ -471,7 +491,7 @@ void burnCodeBuffer(uint16_t flags, uint16_t groupBits) {
             }
         }
         if (!writeData(burnBuffer, sizeof(burnBuffer), makeAddress(rom, flags, groupBits))) {
-            Serial.println("FAILED!");
+            fail();
         }
     }
 }
@@ -569,22 +589,26 @@ bool burnByte(byte value, uint32_t address) {
     writeDataBus(value);
 
     enableChip();
-    delayMicroseconds(1);
+    delayMicroseconds(3);
     enableWrite();
-    delayMicroseconds(1);
+    delayMicroseconds(3);
     disableWrite();
 
     status = waitForWriteCycleEnd(value);
 
     disableChip();
 
+    if (!status) {
+        Serial.print(F("burn address="));
+        Serial.println(address, HEX);
+    }
     return status;
 }
 
 
 bool burnBlock(byte data[], uint32_t len, uint32_t address) {
     bool status = false;
-    char cb[50];
+//    char cb[50];
 //    sprintf(cb, "burn %02x at %04x", uint16_t(len), uint16_t(address));
 //    Serial.println(cb);
 //    Serial.println(address, HEX);

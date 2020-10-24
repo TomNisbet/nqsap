@@ -6,7 +6,7 @@
 #include "XModem.h"
 
 
-static const char * MY_VERSION = "2.1";
+static const char * MY_VERSION = "2.2";
 
 
 // Global status
@@ -18,43 +18,56 @@ LoaderHw hw(32 * 1024L);
 // Global XModem driver
 XModem xmodem(hw, cmdStatus);
 
+// Instruction opcodes.  Those marked with an asterisk use the ALU and thus must have
+// specific opcodes that match the bits that are hardwired from the IR to the ALU control.
 enum {
-    NOP = 0x00,      // no operation
-    LDA = 0x01,      // load A from memory
-    STA = 0x02,      // store A to memory
-    LIA = 0x03,      // load immediate to A
-    JMP = 0x04,      // jump
-    JZ  = 0x05,      // jump if zero
-    JC  = 0x06,      // jump if carry
-    OUT = 0X07,      // output A
-    JMPIA = 0x09,    // jump immediate+A
-    HLT = 0x0f,      // halt
-    LIS  = 0x10,     // load immediate to SP
-    TAS  = 0x11,     // transfer A to SP
-    TSA  = 0x12,     // transfer SP to A
-    JSR  = 0x1a,     // jump to subroutine        * this opcode is ALU B *
-    RTS  = 0x1b,     // return from subroutine
-    PHA  = 0x1c,     // push A
-    PLA  = 0x1d,     // pull A
+    // 00 - 1f   Immediate - ALU Arithmetic
+    IP_NOP = 0x00,  // no operation
+    IM_LDA = 0x03,  // load immediate to A
+    IM_JMP = 0x05,  // jump
+    IM_SBC = 0x06,  // * subtract with carry A
+    IP_OUT = 0x07,  // output A
+    IM_ADC = 0x09,  // * add with carry A
+    IM_JZ  = 0x0a,  // jump if zero
+    IM_JC  = 0x0b,  // jump if carry
+    IP_HLT = 0x0f,  // halt
+    IP_PHA = 0x11,  // push A
+    IP_PLA = 0x12,  // pull A
+    IM_EOR = 0x16,  // * XOR A
+    IM_AND = 0x1b,  // * AND A
+    IM_OR  = 0x1e,  // * OR A
 
-    INC = 0x20,
-    SUB = 0x26,
-    ADD = 0x29,
-    ASL = 0x2c,
-    DCA = 0x2f,     // ** "DEC" conflicts with Arduino definitions **
-    NOT = 0x30,
-    EOR = 0x36,
-    AND = 0x3b,
-    OR  = 0x3e
+    // 20 - 2f   Absolute ALU Arithmetic and ALU unary
+    IP_INC = 0x20,  // * increment A
+    AB_LDA = 0x23,  // load A from memory
+    AB_STA = 0x24,  // store A to memory
+    AB_SBC = 0x26,  // * subtract with carry A
+    AB_ADC = 0x29,  // * add with carry A
+    IP_ASL = 0x2c,  // * arithmetic shift left A
+    IP_DEC = 0x2f,  // * decrement A
+    IP_NOT = 0x30,  // * NOT A
+    AB_EOR = 0x36,  // * exlcusive OR A
+    AB_AND = 0x3b,  // * AND A
+    AB_OR  = 0x3e,   // * OR A
+
+    // 40 - 4f   General
+    IP_JPA = 0x49,    // * jump immediate+A       * this opcode is ADD *
+    IM_LDS = 0x50,  // load immediate to SP
+    IP_TAS = 0x51,  // transfer A to SP
+    IP_TSA = 0x52,  // transfer SP to A
+    IM_JSR = 0x5a,  // * jump to subroutine       * this opcode is ALU B *
+    IP_RTS = 0x5b   // return from subroutine
+
+    // 60 - ff unused
 };
 
 static const uint8_t program0[] = {
     // Count by 3
-    LIA, 10,   // start at 10
+    IM_LDA, 10,   // start at 10
 // LOOP
-    ADD, 3,    // ADD 3 to A
-    OUT,       // OUT (A to display)
-    JMP, 2     // JMP back to LOOP
+    IM_ADC, 3,    // ADD 3 to A
+    IP_OUT,       // OUT (A to display)
+    IM_JMP, 2     // JMP back to LOOP
 };
 
 static const uint8_t program1[] = {
@@ -66,51 +79,60 @@ static const uint8_t program1[] = {
 };
 
 static const uint8_t program2[] = {
-    LIA, 1,    // start at 1
-    DEC,
-    JC, 11,
-    JZ, 15,
+    IM_LDA, 1,    // start at 1
+    IP_DEC,
+    IM_JC, 11,
+    IM_JZ, 15,
 // 7
-    LIA, 22,
-    OUT,
-    HLT,
+    IM_LDA, 22,
+    IP_OUT,
+    IP_HLT,
 // 11
-    LIA, 33,
-    OUT,
-    HLT,
+    IM_LDA, 33,
+    IP_OUT,
+    IP_HLT,
 // 15
-    LIA, 44,
-    OUT,
-    HLT
+    IM_LDA, 44,
+    IP_OUT,
+    IP_HLT
 };
 
 static const uint8_t program3[] = {
-    LIA, 10,    // Test stack - load value to A and push, change A, pop
-    PHA,
-    INC,
-    INC,
-    PLA,
-    HLT
+    IM_LDA, 10,    // Test stack - load value to A and push, change A, pop
+    IP_PHA,
+    IP_INC,
+    IP_INC,
+    IP_PLA,
+    IP_HLT
 };
 
 static const uint8_t program4[] = {
-    LIS, 0x80,
-    LIA, 0,
+    IM_LDS, 0x80,
+    IM_LDA, 0,
 // LOOP
-    ADD, 5,    // ADD 5 to A
-    JSR, 16,   // OUT (A to display)
-    JMP, 4,    // JMP back to LOOP
-    NOP,NOP,NOP,NOP,NOP,NOP,
-    PHA,
-    OUT,
-    DCA,
-    OUT,
-    DCA,
-    OUT,
-    PLA,
-    RTS
+    IM_ADC, 5,    // ADD 5 to A
+    IM_JSR, 16,   // OUT (A to display)
+    IM_JMP, 4,    // JMP back to LOOP
+    IP_NOP,IP_NOP,IP_NOP,IP_NOP,IP_NOP,IP_NOP,
+    IP_PHA,
+    IP_OUT,
+    IP_DEC,
+    IP_OUT,
+    IP_DEC,
+    IP_OUT,
+    IP_PLA,
+    IP_RTS
 };
 
+static const uint8_t program5[] = {
+    IM_LDA, 0x22,
+    AB_STA, 0x50,
+    IP_INC,
+    AB_STA, 0x51,
+    AB_LDA, 0x50,
+    IP_OUT,
+    IM_JMP, 10
+};
 struct program_t {
     const uint8_t * data;
     size_t          len;
@@ -120,7 +142,8 @@ static const program_t programs[] = {
     program1, sizeof(program1),
     program2, sizeof(program2),
     program3, sizeof(program3),
-    program4, sizeof(program4)
+    program4, sizeof(program4),
+    program5, sizeof(program5)
 };
 
 
@@ -185,15 +208,23 @@ char * readLine(char * buffer, int len) {
     int ix = 0;
     do {
         c = waitChar();
-        if ((c == '\b') && (ix > 0)) {
-            // Backspace, forget last character
-            --ix;
+        if (c == '\\') {
+            // Do a cYcle command without waiting for newline character.
+            buffer[0] = 'Y';
+            ix = 2;
+            break;
+        } else if (c == '\b') {
+            // Backspace, forget last character.
+            if (ix > 0) {
+                --ix;
+            }
+        } else {
+            buffer[ix++] = c;
         }
-        buffer[ix++] = c;
         Serial.write(c);
     } while ((c != '\n') && (ix < len));
 
-    buffer[ix - 1] = 0;
+    buffer[ix - 1] = '\0';
     return buffer;
 }
 
@@ -544,7 +575,7 @@ byte parseCommand(char c)
 
 
 void commandLoop() {
-    char line[20];
+    char line[60];
     char buff[50];
     uint32_t a1, a2, a3;
     byte lastVal = 0;

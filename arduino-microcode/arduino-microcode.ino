@@ -1,6 +1,6 @@
 #include "Arduino.h"
 
-static const char * MY_VERSION = "1.2";
+static const char * MY_VERSION = "2.0";
 
 // IO lines for the EEPROM device control
 // Pins D2..D9 are used for the data bus.
@@ -13,6 +13,11 @@ static const char * MY_VERSION = "1.2";
 
 #define GREEN_LED       A7
 #define RED_LED         13
+
+
+// TODO: may need better high-level explanation of the buffers used in this code, i.e.
+// group of 32-bit instruction generated, customized multiple times for the flag
+// combinations, then split into the 4 b-bit chuck to be written to the chip.
 
 void burnMicrocodeRoms();
 void disableSoftwareWriteProtect();
@@ -101,6 +106,7 @@ void fail() {
       delay(500);
     }
 }
+
 //               ROM3    ROM2    ROM1    ROM0
 //             +------++------++------++------+
 // ROM3        WWWWxRRR765432107654321076543210
@@ -175,94 +181,143 @@ enum {
     SF_C = 0x02,        // Carry
 };
 
+
+// Instruction opcodes.  Those marked with an asterisk use the ALU and thus must have
+// specific opcodes that match the bits that are hardwired from the IR to the ALU control.
+enum {
+    // 00 - 1f   Immediate - ALU Arithmetic
+    IP_NOP = 0x00,  // no operation
+    IM_LDA = 0x03,  // load immediate to A
+    IM_JMP = 0x05,  // jump
+    IM_SBC = 0x06,  // * subtract with carry A
+    IP_OUT = 0x07,  // output A
+    IM_ADC = 0x09,  // * add with carry A
+    IM_JZ  = 0x0a,  // jump if zero
+    IM_JC  = 0x0b,  // jump if carry
+    IP_HLT = 0x0f,  // halt
+
+    // 10 - 1f  Immediate - ALU Logic
+    IP_PHA = 0x11,  // push A
+    IP_PLA = 0x12,  // pull A
+    IM_EOR = 0x16,  // * XOR A
+    IM_AND = 0x1b,  // * AND A
+    IM_OR  = 0x1e,  // * OR A
+
+    // 20 - 2f   Absolute ALU Arithmetic and ALU unary
+    IP_INC = 0x20,  // * increment A
+    AB_LDA = 0x23,  // load A from memory
+    AB_STA = 0x24,  // store A to memory
+    AB_SBC = 0x26,  // * subtract with carry A
+    AB_ADC = 0x29,  // * add with carry A
+    IP_ASL = 0x2c,  // * arithmetic shift left A
+    IP_DEC = 0x2f,  // * decrement A
+
+    // 30 - 3f  Absolute ALU Logic Absolute and ALU unary
+    IP_NOT = 0x30,  // * NOT A
+    AB_EOR = 0x36,  // * exlcusive OR A
+    AB_AND = 0x3b,  // * AND A
+    AB_OR  = 0x3e,  // * OR A
+
+    // These instructions are temporary.  When the X/Y/T registers are added, most of
+    // these will be replaced.
+    // The JSR/RTS instructions are here because JSR uses the ALU to read B as temporary
+    // storage and therefore must have a specific opcode. The new version will either read
+    // B directly (new functionality) or use T for its temp.
+    // The JPA will be replaced by ABS,X and ABS,Y addressing modes.  TXS and TSX will
+    // replace TAS and TSA.
+
+    // 40 - 4f   General
+    IP_JPA = 0x49,    // * jump immediate+A       * this opcode is ADD *
+
+    // 50 -5f  General
+    IM_LDS = 0x50,  // load immediate to SP
+    IP_TAS = 0x51,  // transfer A to SP
+    IP_TSA = 0x52,  // transfer SP to A
+    IM_JSR = 0x5a,  // * jump to subroutine       * this opcode is ALU B *
+    IP_RTS = 0x5b   // return from subroutine
+
+    // 60 - ff unused
+};
+
+
 // GGGGIIII - Instruction register opcode format, group and instruction bits
 // GGGMSSSS - Mapping of ALU control bits to opcode bits
 enum {
-    // The Mode bit and the four Select bits of the ALU are connected directly to the
-    // Instruction Register so that 5 additional microcode ROM bits are not consumed.
-    //  This means that, other than the CARRY-IN bit, all ALU instructions have identical
-    // microcode.
-    //
-    // The CARRY IN flag is not wired to the Instruction Register, so it is not encoded as
-    // part of the instruction.  The ALU_CI is used to represent it in the ALU instruction
-    // table so that it can be detected and used to set the AC bit in the full 32 bit
-    // microinstruction.  Note that this bit must be outside of the 8 bits used for the
-    // opcode.
-    ALU_CI = 0b000100000000,
-    ALU_B  = 0b001000000000,
-    ALU_MEM= 0b010000000000,
+    // The ALU operation is determined by the Mode bit (Arithmetic/Logic), the Select
+    // bits, and the CARRY-IN bit. The Mode bit and the four Select bits of the ALU are
+    // connected directly to the Instruction Register so that 5 additional microcode ROM
+    // bits are not consumed. This means that, other than the CARRY-IN bit, all ALU
+    // instructions can have identical microcode.  The bits below match the wiring of the
+    // IR to the ALU and therefore also match the lower 5 bits of the 8-bit instruction
+    // opcode. The CARRY-IN flag is not wired to the Instruction Register, so it is not
+    // encoded as part of the instruction.
+    ALU_M =               0b00010000,
+    ALU_S3 =              0b00001000,
+    ALU_S2 =              0b00000100,
+    ALU_S1 =              0b00000010,
+    ALU_S0 =              0b00000001,
 
-    // The M bit is wired from the lowest group bit in the IR to the ALU.
-    ALU_GROUP_MASK =    0b01110000,
-    ALU_ARITH =         0b00100000,
-    ALU_LOGIC =         0b00110000,
+    // The flags below are per-instruction options.  They are used only in the definition
+    // table to assist in building the microcode.  They do not map to any physical bits
+    // and are defined outside of the 8-bit opcode area to avoid confusion.
+    // The ALU_DEF_CI flag indicates that an ALU instruction needs its microcode to set
+    // the AC bit for the ALU CARRY-IN flag input.
 
-    ALU_M =             0b00010000,
-    ALU_S3 =            0b00001000,
-    ALU_S2 =            0b00000100,
-    ALU_S1 =            0b00000010,
-    ALU_S0 =            0b00000001
-};
-
-enum {
-    // 00 - 0f   General
-    IN_NOP = 0x00,      // no operation
-    IN_LDA = 0x01,      // load A from memory
-    IN_STA = 0x02,      // store A to memory
-    IN_LIA = 0x03,      // load immediate to A
-    IN_JMP = 0x04,      // jump
-    IN_JZ  = 0x05,      // jump if zero
-    IN_JC  = 0x06,      // jump if carry
-    IN_OUT = 0X07,      // output A
-
-    IN_JMPIA = 0x09,    // jump immediate+A
-
-    IN_HLT = 0x0f,      // halt
-
-    // 10 -1f  General
-    IN_LIS  = 0x10,     // load immediate to SP
-    IN_TAS  = 0x11,     // transfer A to SP
-    IN_TSA  = 0x12,     // transfer SP to A
-    IN_JSR  = 0x1a,     // jump to subroutine        * this opcode is ALU B *
-    IN_RTS  = 0x1b,     // return from subroutine
-    IN_PHA  = 0x1c,     // push A
-    IN_PLA  = 0x1d,     // pull A
-
-    // 20 - 2f   ALU Arithmetic
-    IN_INC = ALU_ARITH,                                     // 20 - A plus 1
-    IN_SUB = ALU_ARITH          | ALU_S2 | ALU_S1,          // 26 - A minus B
-    IN_ADD = ALU_ARITH | ALU_S3                   | ALU_S0, // 29 - A plus B
-    IN_ASL = ALU_ARITH | ALU_S3 | ALU_S2,                   // 2c - A + A
-    IN_DEC = ALU_ARITH | ALU_S3 | ALU_S2 | ALU_S1 | ALU_S0, // 2f - A minus 1
-
-    // 30 - 3f  ALU Logic
-    IN_NOT = ALU_LOGIC,                                     // 30 - not A
-    IN_EOR = ALU_LOGIC          | ALU_S2 | ALU_S1,          // 36 - A xor B
-    IN_AND = ALU_LOGIC | ALU_S3          | ALU_S1 | ALU_S0, // 3b - A and B
-    IN_OR  = ALU_LOGIC | ALU_S3 | ALU_S2 | ALU_S1           // 3e - A or B
-
-    // 40 - ff unused
+    // The ALU_DEF_BINARY flag indicates an instruction that uses both the A and B operand
+    // inputs to the ALU.  The A operand always comes from the current contents of the A
+    // register.  Multiple version of each instruction can be created (with  different
+    // opcodes) so that the B operand could come from memory, immediate value, or other
+    // options.  There is no point in generating multiple instruction variants for the
+    // unary operations, because they always work only on the contents of the A register.
+    ALU_DEF_CI      = 0b000100000000,
+    ALU_DEF_BINARY  = 0b001000000000,
 };
 
 // This table contains the opcodes that are used for ALU instructions plus additional bits
 // to indicate if a second operand is specified for the B register and if the AC flag
 // should be set in the microcode steps for the instruction.  Many of the combinations of
 // control bits in the ALU do not map to useful operations, so this is a small subset of
-// the complete ALU operation set.
-uint16_t aluInstructions[] = {
-    // 20-2f   ALU Arithmetic
-    IN_INC,                     // A + 1
-    IN_SUB | ALU_B,             // A - B
-    IN_ADD | ALU_B | ALU_CI,    // A + B
-    IN_ASL         | ALU_CI,    // A + A (shift left)
-    IN_DEC         | ALU_CI,    // A - 1
+// the complete ALU operation set.  Note that some ALU operations in the table are
+// commented out.  They are to show ALU operations that might be used by the underlying
+// microcode, but are not useful as standalone instructions.  For example, the B operation
+// us a worthless instruction, but the ALU operation is used by the CALL instruction so
+// that B can be used for temporary storage.  The all-zeroes or all-ones operations
+// may also be useful utilities.
 
-    // 30 - 3f  ALU Logic
-    IN_NOT,                     // NOT A
-    IN_EOR | ALU_B,             // A xor B
-    IN_AND | ALU_B,             // A and B
-    IN_OR  | ALU_B              // A or B
+uint16_t aluInstructionDefinitions[] = {
+    // M=0 ALU Arithmetic operations
+    0,                                                               // 00 INC - A plus 1
+    //                                              ALU_S1 | ALU_S0, // 03 zero - all zero
+    //               ALU_DEF_CI                   | ALU_S1 | ALU_S0, // 03 ones - all one
+    ALU_DEF_BINARY                       | ALU_S2 | ALU_S1,          // 06 SUB - A minus B
+    ALU_DEF_BINARY | ALU_DEF_CI | ALU_S3                   | ALU_S0, // 09 ADD - A plus B
+                     ALU_DEF_CI | ALU_S3 | ALU_S2,                   // 0c ASL - A + A
+                     ALU_DEF_CI | ALU_S3 | ALU_S2 | ALU_S1 | ALU_S0, // 0f DEC - A minus 1
+
+    // M=1 ALU Logic operations
+                     ALU_M,                                          // 10 NOT - not A
+    ALU_DEF_BINARY | ALU_M               | ALU_S2 | ALU_S1,          // 16 XOR - A xor B
+    //               ALU_M      | ALU_S3          | ALU_S1,          // 1a B - returns B
+    ALU_DEF_BINARY | ALU_M      | ALU_S3          | ALU_S1 | ALU_S0, // 1b AND - A and B
+    ALU_DEF_BINARY | ALU_M      | ALU_S3 | ALU_S2 | ALU_S1           // 1e OR - A or B
 };
+
+// The ALU instruction group options allow programmatic generation of a group of ALU
+// instructions.  By specifying different group options, the aluInstructionDefinitions
+// table can be used to create multiple instruction groups with different processing.
+//
+// For example, one group could have instructions like "ADD A to immediate value" and
+// another could have "ADD A to value from memory".
+// The OPT_UNARY flag allows selective generation of the instructions that only have a
+// single operand (not ALU_IN_BINARY), so that multiple versions of these instructions
+// are not generated for each addressing mode.
+enum {
+    ALU_OPT_UNARY     = 0b00000001,     // Generate unary instructions
+    ALU_OPT_IMMEDIATE = 0b00000010,     // Operands are A and immediate value
+    ALU_OPT_ABSOLUTE  = 0b00000100,     // Operands are A and value from memory location
+    ALU_OPT_NONE      = 0b00001000      // Do not generate ALU instructions
+};
+
 
 
 // ROM addressing 32K = 15 address bits
@@ -311,46 +366,127 @@ typedef microcode_t template_t[NUM_INSTRUCTIONS][NUM_STEPS];
 
 //const microcode_t template0[NUM_INSTRUCTIONS][NUM_STEPS] PROGMEM = {
 const template_t template0 PROGMEM = {
-//  0   1   2         3           4        5 6 7
-  { F1, F2, 0,        0,          0,       0,0,0 }, // 00 NOP
-  { F1, F2, FA,       RM|WMA,     RM|WA|N, 0,0,0 }, // 01 LDA
-  { F1, F2, FA,       RM|WMA,     RA|WM|N, 0,0,0 }, // 02 STA
-  { F1, F2, FA,       RM|WA|N,    0,       0,0,0 }, // 03 LDAI
-  { F1, F2, FA,       RM|WP|N,    0,       0,0,0 }, // 04 JMP
-  { F1, F2, 0,        IP|N,       0,       0,0,0 }, // 05 JZ // TODO use T2?
-  { F1, F2, 0,        IP|N,       0,       0,0,0 }, // 06 JC
-  { F1, F2, RA|WO|N,  0,          0,       0,0,0 }, // 07 OUTA
-  { F1, F2, HLT,      0,          0,       0,0,0 }, // 08
-  { F1, F2, FA,       RM|WB,      RB|WP|N, 0,0,0 }, // 09 JMPIA  ** ALU op=ADD **
-  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0a
-  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0b
-  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0c
-  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0d
-  { F1, F2, HLT,      0,          0,       0,0,0 }, // 0e
-  { F1, F2, HLT,      0,          0,       0,0,0 }  // 0f HLT
+//  0   1   2         3           4        5         6        7
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 00 IP_NOP
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 01
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 02
+  { F1, F2, FA,       RM|WA|N,    0,       0,        0,       0 }, // 03 IM_LDA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 04
+  { F1, F2, FA,       RM|WP|N,    0,       0,        0,       0 }, // 05 IP_JMP
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 06 IM_SBC *
+  { F1, F2, RA|WO|N,  0,          0,       0,        0,       0 }, // 07 IP_OUT
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 08
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 09 IM_ADC *
+  { F1, F2, 0,        IP|N,       0,       0,        0,       0 }, // 0a IM_JZ // TODO use T2?
+  { F1, F2, 0,        IP|N,       0,       0,        0,       0 }, // 0b IM_JC
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0d
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 0f IP_HLT
 };
 
 const template_t template1 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, FA,       RM|WS|N,    0,       0,        0,       0 }, // 10 LDSI
-  { F1, F2, RA|WS|N,  0,          0,       0,        0,       0 }, // 11 TSA
-  { F1, F2, RS|WA|N,  0,          0,       0,        0,       0 }, // 12 TAS
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 10
+  { F1, F2, RS|WMA,   RA|WM|SI|N, 0,       0,        0,       0 }, // 11 PHA
+  { F1, F2, SD,       RS|WMA,     RM|WA|N, 0,        0,       0 }, // 12 PLA
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 13
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 14
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 15
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 16
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 16 IM_EOR *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 17
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 18
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 19
-  { F1, F2, FA,       RM|WB,      RS|WMA,  WM|RP|SI, RB|WP|N, 0 }, // 1a JSR
-  { F1, F2, SD,       RS|WMA,     RM|WP|N, 0,        0,       0 }, // 1b RTS
-  { F1, F2, RS|WMA,   RA|WM|SI|N, 0,       0,        0,       0 }, // 1c PHA
-  { F1, F2, SD,       RS|WMA,     RM|WA|N, 0,        0,       0 }, // 1d PLA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1a
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 1b IM_AND *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1d
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 1e IM_OR *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 1f
 };
 
-const template_t * templates[] = { &template0, &template1 };
+const template_t template2 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 20 IP_INC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 21
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 22
+  { F1, F2, FA,       RM|WMA,     RM|WA|N, 0,        0,       0 }, // 23 AB_LDA
+  { F1, F2, FA,       RM|WMA,     RA|WM|N, 0,        0,       0 }, // 24 AB_STA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 25
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 26 AB_SBC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 27
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 28
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 29 AB_ADC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2a
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2b
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 2c IP_ASL *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2d
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2e
+  { 0,  0,  0,        0,          0,       0,        0,       0 }  // 2f IP_DEC *
+};
+
+const template_t template3 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 30 IP_NOT *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 31
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 32
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 33
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 34
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 35
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 36 AB_EOR *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 37
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 38
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 39
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3a
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3b AB_AND *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3d
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3e AB_OR *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 3f
+};
+
+const template_t template4 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 40
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 41
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 42
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 43
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 44
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 45
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 46
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 47
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 48
+  { F1, F2, FA,       RM|WB,      RB|WP|N, 0,        0,       0 }, // 49 IP_JPA * ALU op=ADD
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4a
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4b
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4d
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 4f
+};
+
+const template_t template5 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, FA,       RM|WS|N,    0,       0,        0,       0 }, // 50 IM_LDS
+  { F1, F2, RS|WA|N,  0,          0,       0,        0,       0 }, // 51 IP_TAS
+  { F1, F2, RA|WS|N,  0,          0,       0,        0,       0 }, // 52 IP_TSA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 53
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 54
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 55
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 56
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 57
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 58
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 59
+  { F1, F2, FA,       RM|WB,      RS|WMA,  WM|RP|SI, RB|WP|N, 0 }, // 5a IM_JSR
+  { F1, F2, SD,       RS|WMA,     RM|WP|N, 0,        0,       0 }, // 5b IP_RTS
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5d
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 5f
+};
+
+const template_t * templates[] = { &template0, &template1, &template2, &template3,
+                                   &template4, &template5 };
 
 // A buffer to hold a group of instruction microcode words that have been
 // built from a template or from the ALU building code.
@@ -369,70 +505,119 @@ microcode_t testCode[NUM_INSTRUCTIONS][NUM_STEPS];
 
 // Convert the individual address components into a 15-bit address for the ROM.
 uint16_t makeAddress(uint16_t rom, uint16_t flags=0, uint16_t groupBits=0, uint16_t instr=0, uint16_t step=0) {
-    char b[50];
     uint16_t addr =  (rom << 13) | (flags << 11) | (groupBits << 3) | (instr << 3) | step;
-    sprintf(b, "a=x%04x  r=%d f=%d g=x%02x i=%u s=%u", addr, rom, flags, groupBits, instr, step);
-    Serial.println(b);
+//    char b[50];
+//    sprintf(b, "a=x%04x  r=%d f=%d g=x%02x i=%u s=%u", addr, rom, flags, groupBits, instr, step);
+//    Serial.println(b);
     return addr;
 }
 
 // Convert a group number (0..NUM_GROUPS) into the group bits portion of an opcode.
 // Note that this is not the same position that the group bits occupy in a ROM address.
-uint8_t makeGroupBits(uint8_t group) {
+uint8_t makeOpcodeGroupBits(uint8_t group) {
     return group << 4;
 }
 
 // Make an opcode from a group number and an instruction number.
 // Group numbers are (0..NUM_GROUPS) and an instruction numbers are (0..NUM_INSTRUCTIONS)
 uint8_t makeOpcode(uint8_t group, uint8_t instr) {
-    return makeGroupBits(group) | instr;
+    return makeOpcodeGroupBits(group) | instr;
 }
 
-void burnAluInstructions(uint8_t groupBits, const char * groupName) {
-    Serial.print("ALU ");
-    Serial.println(groupName);
+// Each call to this burns one block of code at group and the other at group+1.
+void burnInstructionGroups(uint8_t group, const char * name, uint8_t groupOptions) {
+    // Note that groupOptions are specific to a whole block of instructions, like
+    // should unaries be generated and where does the B argument come from.  There
+    // are also instructionOptions that are encoded into the high bits of the
+    // aluInstructions entries.  These indicate whether a specific instruction
+    // is binary or unary, sets the status flags, and needs the ALU carry in flag.
 
-    // Initialize the buffer with a HLT instruction.
-    for (int i = 0; (i < NUM_INSTRUCTIONS); i++) {
-        code[i][0] = F1;
-        code[i][1] = F2;
-        code[i][2] = HLT;
-        code[i][3] = code[i][4] = code[i][5] = code[i][6] = code[i][7] = 0;
+    burnInstructionGroup(group,   name, groupOptions);  // Arithmetic
+    burnInstructionGroup(group+1, name, groupOptions);  // Logical
+}
+
+void burnInstructionGroup(uint8_t group, const char * name, uint8_t groupOptions) {
+    Serial.print(F("burning "));
+    Serial.print(group);
+    Serial.print(F(" - "));
+    Serial.println(name);
+    for (int flags = 0; (flags < NUM_FLAG_COMBOS); flags++) {
+        buildInstructions(group, groupOptions);
+        customizeCodeGroup(flags, group);
+        burnCodeBuffer(flags, group);
+    }
+}
+
+void buildInstructions(uint8_t group, uint8_t groupOptions) {
+    // Initialize the code buffer with values for the entries that will not get
+    // overwritten by ALU instructions.
+    if (group < (sizeof(templates) / sizeof(*templates))) {
+        // Initialize the code buffer from a template.
+        memcpy_P(code, templates[group], sizeof(code));
+    } else {
+        // Initialize the code buffer with a HLT instruction.
+        for (int i = 0; (i < NUM_INSTRUCTIONS); i++) {
+            code[i][0] = F1;
+            code[i][1] = F2;
+            code[i][2] = HLT;
+            code[i][3] = code[i][4] = code[i][5] = code[i][6] = code[i][7] = 0;
+        }
     }
 
-    // Walk the ALU instruction table and process those that match the current group. For
-    // each ALU instruction in the group being processed, generate a set of steps to fetch
-    // the operand into B (if needed) and then store the ALU result back into A.  The mode
-    // and select lines on the ALU chips are wired to the instruction register, so the
-    // only code differences in the instructions are the setting of the ALU CARRY-IN bit.
-    for (unsigned i = 0; (i < (sizeof(aluInstructions) / sizeof(*aluInstructions))); i++) {
-        uint8_t opcode = aluInstructions[i] & OPCODE_MASK;
-        if ((opcode & GROUP_MASK) == groupBits) {
+    // There are currently some non-ALU instructions (like IP_JMPIA) that use ALU
+    // functionality that would conflict with existing ALU instructions.  Skip ALU
+    // instruction generation in this case and just use the microcode from the templates.
+    // These instrutions will likely all be removed when the X/Y/T registers are added.
+    if (groupOptions & ALU_OPT_NONE) return;
+
+    // Walk the ALU instruction definitions table and generate the microcode.  There are
+    // two conditions that must be met for a table entry to output microcode:
+
+    //   1. The low order bit of the groupBits is the position of the ALU_M bit that
+    //   indicates an arithmetic or logical instruction.  The table has both types, so
+    //   only generate the set of instructions that match the ALU_M bit for the group.
+
+    //   2. The instruction must use two operands (ALU_IN_BINARY) or the options to
+    //   generate unary instructions for the group (ALU_OPT_UNARY) must be set. This
+    //   prevents multiple instances of the unary ALU instructions for being created when
+    //   generating multiple sets of binary ALU instructions with differing operand
+    //   sources.
+
+    // For each ALU instruction in the group being processed, generate a set of steps to
+    // fetch the operand into B (if needed) and then store the ALU result back into A. The
+    // mode and select lines on the ALU chips are wired to the instruction register, so
+    // the only code differences in the instructions are the setting of the ALU CARRY-IN
+    // bit.
+    uint8_t groupBits = makeOpcodeGroupBits(group);
+    for (unsigned i = 0; (i < (sizeof(aluInstructionDefinitions) / sizeof(*aluInstructionDefinitions))); i++) {
+        uint16_t def = aluInstructionDefinitions[i];
+        uint8_t opcode = def & OPCODE_MASK;
+        if (((opcode & ALU_M) == (groupBits & ALU_M)) &&
+            ((groupOptions & ALU_OPT_UNARY) || (def & ALU_DEF_BINARY))) {
             unsigned index = opcode & INSTRUCTION_MASK;
-            microcode_t carry = aluInstructions[i] & ALU_CI ? AC : 0;
+            microcode_t carry = (def & ALU_DEF_CI) ? AC : 0;
             code[index][5] = code[index][6] = code[index][7] = 0;
             code[index][0] = F1;            // Fetch instruction from memory
             code[index][1] = F2;            // Opcode into IR (sets ALU mode and S bits)
-            if (aluInstructions[i] & ALU_B) {
+            if ((def & ALU_DEF_BINARY) == 0) {
+                // Unary operation, no additional operand needed
+                code[index][2] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
+            } else if (groupOptions & ALU_OPT_IMMEDIATE) {
+                // Get B operand from immediate value
                 code[index][2] = RPI | WMA;     // Get next address from PC
                 code[index][3] = RM | WB;       // Read operand into B (immediate data)
                 code[index][4] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
-            } else if (aluInstructions[i] & ALU_MEM) {
+            } else if (groupOptions & ALU_OPT_ABSOLUTE) {
+                    // Get B operand from specified memory location
                     code[index][2] = RPI | WMA;     // Get next address from PC
                     code[index][3] = RM | WMA;      // Read address of operand into MAR
                     code[index][4] = RM | WB;       // Read operand into B
                     code[index][5] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
             } else {
-                code[index][2] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
-                code[index][3] = code[index][4] = 0;
+                Serial.print(F("ALU microcode error, opcode="));
+                Serial.println(opcode);
             }
         }
-    }
-
-    // None of the ALU instructions depend on the state of the flags, so burn identical
-    // copies of the microcode for all flag values.
-    for (int flags = 0; (flags < NUM_FLAG_COMBOS); flags++) {
-        burnCodeBuffer(flags, groupBits);
     }
 }
 
@@ -447,13 +632,13 @@ void customizeCodeGroup(uint16_t flags, uint16_t group) {
     for (uint16_t instr = 0; (instr < NUM_INSTRUCTIONS); instr++) {
         uint16_t opcode = makeOpcode(group, instr);
         switch (opcode) {
-        case IN_JZ:
+        case IM_JZ:
             if (flags & SF_Z) {
                 // default JZ is a NOP.  Make it a JMP if the Z flag is set.
                 buildJmpInstruction(instr);
             }
             break;
-        case IN_JC:
+        case IM_JC:
             if (flags & SF_C) {
                 // default JZ is a NOP.  Make it a JMP if the Z flag is set.
                 buildJmpInstruction(instr);
@@ -464,6 +649,8 @@ void customizeCodeGroup(uint16_t flags, uint16_t group) {
         }
     }
 }
+
+#if 0
 // Slice a group of 32-bit instruction control words into individual 8-bit chunks and
 // burn them into the appropriate position in the ROM.
 void burnInstructionGroup(uint16_t group) {
@@ -473,11 +660,13 @@ void burnInstructionGroup(uint16_t group) {
     for (uint16_t flags = 0; (flags < NUM_FLAG_COMBOS); flags++) {
         memcpy_P(code, templates[group], sizeof(code));
         customizeCodeGroup(flags, group);
-        burnCodeBuffer(flags, makeGroupBits(group));
+        burnCodeBuffer(flags, group);
     }
 }
+#endif
 
-void burnCodeBuffer(uint16_t flags, uint16_t groupBits) {
+void burnCodeBuffer(uint16_t flags, uint8_t group) {
+    uint16_t groupBits = makeOpcodeGroupBits(group);
     for (uint16_t rom = 0; (rom < NUM_ROMS); rom++) {
         uint16_t shift = rom << 3;  // Shift 8 bits for each ROM position
         for (int instr = 0; instr < NUM_INSTRUCTIONS; instr++) {
@@ -510,10 +699,10 @@ void burnMicrocodeRoms() {
         }
     }
 
-    burnInstructionGroup(0);
-    burnInstructionGroup(1);
-    burnAluInstructions(ALU_LOGIC, "Logical");
-    burnAluInstructions(ALU_ARITH, "Arithmetic");
+    // Note that each call to burnAluInstructionGroups burns two groups of instructions.
+    burnInstructionGroups(0, "Immediate", ALU_OPT_IMMEDIATE);
+    burnInstructionGroups(2, "Absolute and unary", ALU_OPT_ABSOLUTE | ALU_OPT_UNARY);
+    burnInstructionGroups(4, "Special", ALU_OPT_NONE);
 #else
     // walking bit test for ROM0 to test control bits
     uint8_t bit = 1;
@@ -530,7 +719,7 @@ void burnMicrocodeRoms() {
     }
     for (unsigned flags = 0; flags < NUM_FLAG_COMBOS; flags++) {
         for (unsigned group = 0; group < NUM_GROUPS; group++) {
-            unsigned groupBits = makeGroupBits(group);
+            unsigned groupBits = makeOpcodeGroupBits(group);
             writeData(burnBuffer, sizeof(burnBuffer), makeAddress(3, flags, groupBits));
         }
     }

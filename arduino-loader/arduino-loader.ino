@@ -6,7 +6,7 @@
 #include "XModem.h"
 
 
-static const char * MY_VERSION = "2.2";
+static const char * MY_VERSION = "2.3";
 
 
 // Global status
@@ -35,6 +35,8 @@ enum {
     IP_PLA = 0x12,  // pull A
     IM_EOR = 0x16,  // * XOR A
     IM_AND = 0x1b,  // * AND A
+    IM_JSR = 0x1c,  // jump to subroutine
+    IP_RTS = 0x1d,  // return from subroutine
     IM_OR  = 0x1e,  // * OR A
 
     // 20 - 2f   Absolute ALU Arithmetic and ALU unary
@@ -54,9 +56,7 @@ enum {
     IP_JPA = 0x49,    // * jump immediate+A       * this opcode is ADD *
     IM_LDS = 0x50,  // load immediate to SP
     IP_TAS = 0x51,  // transfer A to SP
-    IP_TSA = 0x52,  // transfer SP to A
-    IM_JSR = 0x5a,  // * jump to subroutine       * this opcode is ALU B *
-    IP_RTS = 0x5b   // return from subroutine
+    IP_TSA = 0x52   // transfer SP to A
 
     // 60 - ff unused
 };
@@ -452,7 +452,7 @@ void fillBlock(uint32_t start, uint32_t end, byte val) {
     }
 
     for (uint32_t addr = start; (addr <= end); addr += BLOCK_SIZE) {
-        uint32_t writeLen = ((end - addr + 1) < BLOCK_SIZE) ? (end - addr + 1) : BLOCK_SIZE;
+        uint32_t writeLen = ((end - addr + 1) < BLOCK_SIZE) ? (end - addr + 1) : uint32_t(BLOCK_SIZE);
         if (!hw.writeData(block, writeLen, addr)) {
             cmdStatus.error("Write failed");
             return;

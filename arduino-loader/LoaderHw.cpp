@@ -76,11 +76,11 @@ enum {
 
 
 static const char * registerNames[] = {
-    "NONE", "MEM", "A",  "ALU/B", "04",  "SP", "PC", "07",
+    "NONE", "MEM", "A",  "B",     "ALU",  "SP", "PC", "07",
     "08",   "MAR", "0a", "0b",    "OUT", "0d", "0e", "IR"
 };
 static const unsigned woRegisters[] = { REG_OUT, REG_MAR, REG_IR };
-static const unsigned rwRegisters[] = { REG_A, REG_ALU, REG_PC, REG_SP };
+static const unsigned rwRegisters[] = { REG_A, REG_B, REG_PC, REG_SP };
 static unsigned numWoRegisters() { return sizeof(woRegisters) / sizeof(*woRegisters); }
 static unsigned numRwRegisters() { return sizeof(rwRegisters) / sizeof(*rwRegisters); }
 
@@ -271,15 +271,6 @@ bool LoaderHw::testRegister(unsigned reg, bool isRw) {
     Serial.print(registerNames[reg]);
     Serial.print(": ");
 
-    if (reg == REG_ALU) {
-        // The ALU register is read-only and the B register is write-only, but a hack
-        // makes it possible to test them together as a read-write register using an
-        // operation in the ALU that ignores the A operand and returns the value of B.
-        // The lower 5 bits of the Instruction Register are wired to the Mode and Select
-        // bits of the ALU chips.  Setting the IR with the value of the ALU B operation
-        // and reading the ALU gives the value that was written to the B register.
-        writeRegister(REG_IR, ALU_B);
-    }
     for (unsigned ix = 0; (ix < sizeof(patterns)); ix++) {
         writeRegister(reg, patterns[ix]);
         delayMicroseconds(2);
@@ -292,10 +283,6 @@ bool LoaderHw::testRegister(unsigned reg, bool isRw) {
             Serial.println(s);
             return false;
         }
-    }
-    if (reg == REG_ALU) {
-        // Reset the IR if it was set above for the ALU test.
-        writeRegister(REG_IR, 0);
     }
 
     Serial.println(F("pass"));

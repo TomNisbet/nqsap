@@ -112,7 +112,7 @@ void fail() {
 // ROM3        WWWWxRRR765432107654321076543210
 #define WM   0b00010000000000000000000000000000L  // 1 Write Memory
 #define WA   0b00100000000000000000000000000000L  // 2 Write A
-#define WB   0b00110000000000000000000000000000L  // 3 Write B (ALU operand)
+#define WB   0b00110000000000000000000000000000L  // 3 Write B
 #define WX4  0b01000000000000000000000000000000L  // 4
 #define WS   0b01010000000000000000000000000000L  // 5 Write SP
 #define WP   0b01100000000000000000000000000000L  // 6 Write PC (Jump)
@@ -128,8 +128,8 @@ void fail() {
 
 #define RM   0b00000001000000000000000000000000L  // 1 Read Memory
 #define RA   0b00000010000000000000000000000000L  // 2 Read A
-#define RB   0b00000011000000000000000000000000L  // 3 Read B (ALU result)
-#define RX4  0b00000100000000000000000000000000L  // 4
+#define RB   0b00000011000000000000000000000000L  // 3 Read B
+#define RL  0b00000100000000000000000000000000L   // 4 Read L (ALU result)
 #define RS   0b00000101000000000000000000000000L  // Read SP
 #define RP   0b00000110000000000000000000000000L  // 6 Read PC
 #define RX7  0b00000111000000000000000000000000L  // 7
@@ -201,6 +201,8 @@ enum {
     IP_PLA = 0x12,  // pull A
     IM_EOR = 0x16,  // * XOR A
     IM_AND = 0x1b,  // * AND A
+    IM_JSR = 0x1c,  // jump to subroutine
+    IP_RTS = 0x1d,  // return from subroutine
     IM_OR  = 0x1e,  // * OR A
 
     // 20 - 2f   Absolute ALU Arithmetic and ALU unary
@@ -220,9 +222,6 @@ enum {
 
     // These instructions are temporary.  When the X/Y/T registers are added, most of
     // these will be replaced.
-    // The JSR/RTS instructions are here because JSR uses the ALU to read B as temporary
-    // storage and therefore must have a specific opcode. The new version will either read
-    // B directly (new functionality) or use T for its temp.
     // The JPA will be replaced by ABS,X and ABS,Y addressing modes.  TXS and TSX will
     // replace TAS and TSA.
 
@@ -232,9 +231,7 @@ enum {
     // 50 -5f  General
     IM_LDS = 0x50,  // load immediate to SP
     IP_TAS = 0x51,  // transfer A to SP
-    IP_TSA = 0x52,  // transfer SP to A
-    IM_JSR = 0x5a,  // * jump to subroutine       * this opcode is ALU B *
-    IP_RTS = 0x5b   // return from subroutine
+    IP_TSA = 0x52   // transfer SP to A
 
     // 60 - ff unused
 };
@@ -399,8 +396,8 @@ const template_t template1 PROGMEM = {
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 19
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1a
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 1b IM_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1d
+  { F1, F2, FA,       RM|WB,      RS|WMA,  WM|RP|SI, RB|WP|N, 0 }, // 1c IM_JSR
+  { F1, F2, SD,       RS|WMA,     RM|WP|N, 0,        0,       0 }, // 1d IP_RTS
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 1e IM_OR *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 1f
 };
@@ -456,7 +453,7 @@ const template_t template4 PROGMEM = {
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 46
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 47
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 48
-  { F1, F2, FA,       RM|WB,      RB|WP|N, 0,        0,       0 }, // 49 IP_JPA * ALU op=ADD
+  { F1, F2, FA,       RM|WB,      RL|WP|N, 0,        0,       0 }, // 49 IP_JPA * ALU op=ADD
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4a
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4b
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4c
@@ -477,8 +474,8 @@ const template_t template5 PROGMEM = {
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 57
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 58
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 59
-  { F1, F2, FA,       RM|WB,      RS|WMA,  WM|RP|SI, RB|WP|N, 0 }, // 5a IM_JSR
-  { F1, F2, SD,       RS|WMA,     RM|WP|N, 0,        0,       0 }, // 5b IP_RTS
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5a
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5b
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5c
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5d
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5e
@@ -601,18 +598,18 @@ void buildInstructions(uint8_t group, uint8_t groupOptions) {
             code[index][1] = F2;            // Opcode into IR (sets ALU mode and S bits)
             if ((def & ALU_DEF_BINARY) == 0) {
                 // Unary operation, no additional operand needed
-                code[index][2] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
+                code[index][2] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
             } else if (groupOptions & ALU_OPT_IMMEDIATE) {
                 // Get B operand from immediate value
                 code[index][2] = RPI | WMA;     // Get next address from PC
                 code[index][3] = RM | WB;       // Read operand into B (immediate data)
-                code[index][4] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
+                code[index][4] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
             } else if (groupOptions & ALU_OPT_ABSOLUTE) {
                     // Get B operand from specified memory location
                     code[index][2] = RPI | WMA;     // Get next address from PC
                     code[index][3] = RM | WMA;      // Read address of operand into MAR
                     code[index][4] = RM | WB;       // Read operand into B
-                    code[index][5] = RB | carry | WA | LF | N;   // Write ALU result into A and flags
+                    code[index][5] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
             } else {
                 Serial.print(F("ALU microcode error, opcode="));
                 Serial.println(opcode);

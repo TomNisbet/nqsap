@@ -25,11 +25,7 @@ In addition to the 74181 ALUs, the NQSAP ALU module needs a few more chips.  As 
 read registers in the NQSAP, a 74LS245 bus transceiver is used to selectively place the
 ALU result on the bus.  
 
-Note that the ALU result is a read-only register and the B register is write-only.  It is
-possible to read the B register (for scratch storage as part of microcode, for example)
-by setting the 74LS181 ALU operation to "B" and then reading the ALU result.  Normally,
-there would be no reason to read B because it is only used as an ALU source register and
-not as a general-purpose register.
+Note that the ALU result is a read-only register.
 
 ## 74181 ALU operations used by NQSAP
 
@@ -48,12 +44,14 @@ not as a general-purpose register.
 |====
 
 The B operation is not used by a standalone instruction, but the ALU functionality of it
-is used by the CALL instruction so that B can be used for temporary storage.  The ALU also
-has an all-zero bits operation and an all-one bits operation that may be useful.  While
-there isn't a good application for these as user-accessible instructions, they might be
-helpful in the microcode to get all zeros or all ones onto the bus.  For example, a
-single-byte CLR instruction could leverage all-zero to implement a register clear that
-would be faster and more compact that using a load immediate 0 instruction.
+was used by the CALL instruction so that B can be used for temporary storage.  The B
+register was later redesigned to add its own bus transceiver to allow direct read access.
+
+The ALU also has an all-zero bits operation and an all-one bits operation that may be
+useful.  While there isn't a good application for these as user-accessible instructions,
+they might be helpful in the microcode to get all zeros or all ones onto the bus.  For
+example, a single-byte CLR instruction could leverage all-zero to implement a register
+clear that would be faster and more compact that using a load immediate 0 instruction.
 
 ## Flags
 

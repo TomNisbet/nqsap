@@ -65,8 +65,8 @@ enum {
     REG_NONE= 0x00,    // No register selected
     REG_MEM = 0x01,
     REG_A =   0x02,
-    REG_B =   0x03,    // B and ALU share an address - B is write, ALU is read
-    REG_ALU = 0x03,
+    REG_B =   0x03,
+    REG_ALU = 0x04,
     REG_SP  = 0x05,
     REG_PC =  0x06,
     REG_MAR = 0x09,

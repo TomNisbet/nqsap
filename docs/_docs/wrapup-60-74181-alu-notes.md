@@ -149,6 +149,43 @@ pin that is connected to the CIN of the upper ALU.
 | HHHH | A - 1     | A - 1     |  H  |  H  |  L  |  H  |
 |====
 
+## Carry Flag Usage in 8-bit Microprocessors
+
+To understand how the 74LS181 might be used, it is helpful to compare the use of the carry
+flag with arithmetic operations of some real microprocessors.
+
+The Z-80 and 8080/8085 have a Carry Flag for arithmetic operations.  This same flag is
+sometimes referred to as the Borrow Flag for subtraction, but it is still just one
+physical flag.
+
+For addition with carry, the operation is A+B+C.  A cleared carry flag produces A+B and a
+set carry flag produces A+B+1.  The carry bit is set if the result overflows into the
+ninth bit.  For subtraction, the operation is A-B-C.  A cleared carry flag produces A-B
+and a set carry flag produces A-B-1.  The carry flag is set if the result of the
+subtraction borrows from the ninth bit.
+
+The 6502 processor also has a single Carry Flag that is used for addition and subtraction
+operations, but it functions differently than the Z-80/8080/8085.
+
+Like the Z-80, the addition with carry the operation is A+B+C.  A cleared carry flag
+produces A+B and a set carry flag produces A+B+1.  The carry bit is set if the result
+overflows into the ninth bit.  
+
+Subtraction on the 6502 is a bit different. The operation is A-B-(1-C), which can also be
+written as A-B-1+C.  A cleared carry flag produces A-B-1 and a set carry flag produces
+A-B.  The carry flag is cleared if the result of the subtraction borrows from the
+ninth bit.
+
+In both cases, the carry can be used to do multiple byte addition or subtraction because
+the carry result produced by an operation is the result needed to do the operation on
+the next byte of data.
+
+The Z-80 model is easier to understand - a set carry bit always indicates a carry or
+borrow from the operation.  The 6502 model is actually a better match for the 74LS181 ALU
+because it uses different values of the carry bit depending on whether addition or
+subtraction is performed.  The only complication is that interpretation of the carry bit
+is inverted between  the 6502 and the 74181.
+
 ## ALU Operations List
 
 The following is a list of all possible operations of the ALU using a simplified syntax.

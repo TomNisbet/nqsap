@@ -69,11 +69,12 @@ but it is not used in the NQSAP design.
 
 ### Carry flag
 
-Using the carry flag output (C<sub>n+4</sub>) as a processor flag is not straightforward because the
-logic state used to indicate an overflow changes depending on the operation.  For the
-addition operations, a logic LOW indicates overflow, but logic HIGH is used for
-subtraction.  See the [74181 ALU notes](../74181-alu-notes/) section for an explanation of
-why the chip does this.
+Using the carry flag output (C<sub>n+4</sub>) as a processor flag is not straightforward
+to understand because the logic state used to indicate an overflow changes depending on
+the operation.  For the addition operations, a logic LOW indicates carry occurred, but
+logic HIGH is used to indicate borrow needed for subtraction.  See the
+[74181 ALU notes](../74181-alu-notes/) section for an explanation of why the chip does
+this.
 
 |Selects|Operation|C<sub>n+4</sub> on overflow|
 |:---:  |:---:    |:---:|
@@ -84,27 +85,23 @@ why the chip does this.
 | HHHH  | A - 1   |  H  |
 |====
 
-There are several approaches that might be used to provide conditional jumps based on the
-carry flag.  One would be to use an additional control line from the microcode ROM and an
-XOR gate to selectively invert the C<sub>n+4</sub> signal.  This requires minimal hardware
-and a small change to the microcode, but it produces a consistent flag that would be set
-on either an addition overflow or a subtraction underflow.
+The NQSAP addition and subtraction operations are modeled after the 6502 processor.  An
+addition with carry instruction will produce A+B when carry is clear and A+B+1 when carry
+is set.  The carry flag will be set at the completion of the operation if the addition
+carried into the non-existent ninth bit.
 
-Another possibility would be to just leave the flag as is (or always invert it) and just
-change the interpretation of the flag.  This would require the programmer to know that
-a jump on carry instruction would be used after addition instructions, but a jump on no
-carry would be used after subtraction.  This is somewhat confusing, but requires no real
-design on the computer.
+A subtraction with carry operation will produce A-B-1 when the carry bit is clear and A-B
+when the carry is set.  The carry flag will be cleared at the completion of the operation
+if the subtraction required a borrow from the non-existent ninth bit.
 
-A follow-on to the previous method would be to add JB (jump on borrow) and JNB (jump on no
-borrow) instructions that behave oppositely of the JC and JNC instructions.  This would
-essentially create a virtual borrow flag.
+This usage is consistent with the 74181 ALU, but the use of the flag is inverted because
+the 74181 uses an active low carry signal.  The C<sub>n+4</sub> carry out signal from the
+high ALU is inverted to provide the 6502-like flag.
 
-A final possibility would be to replace the 74173 4-bit flags register with individual D
-flip flops.  This would also require a new microcode control line, but would offer more
-control over when the flags change.  With this approach, an XOR gate on the C<sub>n</sub>
-and C<sub>n+4</sub> signals (see the [74181 ALU notes](../74181-alu-notes/)) would provide a
-normalized carry flag for the addition and subtraction operations.  The flags control
-lines would not load the carry flag for the increment and decrement operations, because
-those can easily detect overflow using the zero flag instead.  An additional advantage to
-this idea is that it allows the carry flag to be unaffected by the non-arithmetic operations, and AND and OR, where it doesn't really apply.
+The flags are currently implemented with a single 74173 4-bit flags register, meaning that
+any operation that needs to set flags will set them all.  This will be replaced with
+individual D flip flops. This will require more microcode control lines, but will offer
+granular control over when the flags change. It will also allow instructions to set or
+reset individual flags.  This is particularly important because the addition and
+subtraction instructions always use the carry flag, so a clear carry is needed to do an
+initial operation.

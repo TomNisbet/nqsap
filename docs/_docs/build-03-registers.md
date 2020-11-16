@@ -42,7 +42,7 @@ signals from the register select logic are active low instead of active high.  R
 using an inverter chip on the write signal and another chip for the AND operation, a quad
 2-input NOR chip is used to provide the clock.  The diagram below shows the signals.
 
-[![74574 write signals](../../assets/images/74575-write.png "74574 register write signals")](../../assets/images/74575-write.png)
+[![74574 write signals](../../assets/images/74574-write.png "74574 register write signals")](../../assets/images/74574-write.png)
 
 At point "a" in the diagram, the rising edge of the inverted clock is incrementing the
 ring counter to load the next microcode word that wants to write to the B register.  There

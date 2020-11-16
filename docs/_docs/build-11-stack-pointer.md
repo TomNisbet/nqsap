@@ -10,7 +10,7 @@ The stack pointer (SP) is an 8-bit register with read/write access to the bus.  
 new instructions to push and pull registers (PHA, PLA) and to call and return from
 subroutines (JSR, RTS).  There are also new instructions to load the SP from an immediate
 value (LIS) and to transfer values from A to SP (TAS) and from SP to A (TSA).  If no stack
-operations are needed, the SP can be used a a general-purpose register.
+operations are needed, the SP can be used as a general-purpose register.
 
 ## Hardware
 
@@ -40,7 +40,7 @@ switched by the IR and Ring Counter.
 ## Microcode
 
 The SP counts up when pushing values to the stack and counts down when pulling values.
-There is no overflow protection, so the the counter will quietly wrap if it hits the top
+There is no overflow protection, so the counter will quietly wrap if it hits the top
 or bottom of memory.  The push operation uses a post-increment, so the value is stored and
 then the SP is bumped to point to the next available stack address.  In other words, the
 SP always points to the address after the location of the value on the top of the stack.

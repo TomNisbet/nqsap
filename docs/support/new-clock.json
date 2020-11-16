@@ -1,0 +1,16 @@
+{
+  signal: [
+    {name: 'clk', wave: 'p........'},
+    {name: 'clk/2', wave: 'hlhlhlhlh'},
+    {name: 'load', wave: 'PlPlPlPlP'},
+    {name: '<o>clk/2</o>', wave: 'lhlhlhlhl'},
+    {name: 'execute', wave: 'lPlPlPlPl'},
+    {node: ".A...B...."},
+    {node: ".....C...D"},
+    {name: 'clk', wave: "Hl.H.l.H.l."},
+    {name: '<o>clk</o>', wave: "lH.l.H.l.H."},
+    {name: 'ctl', wave: "l.xl......xh......xl..", period: '0.5'},
+    {name: 'ctl AND clk', wave: "l......H.l"}
+  ],
+  edge: ["A<->B first", "C<->D second"]
+}

@@ -1,0 +1,13 @@
+{
+  signal: [
+    {name: 'clk', wave: 'hlHlHlH'},
+    {name: '<o>clk</o>', wave: 'lHlHlHl', node:'...a'},
+    {name: '<o>write</o>', wave: 'h.....xl..h...', period: '0.5'},
+    {name: '<o>clk</o> NOR <o>write</o>', wave: 'l.......H.l...', period: '0.5'}
+  ],
+  edge: ["A<->B first", "C<->D second"],
+  head:{
+   text:'74574 Register Write Signal',
+   tick:0,
+   }
+}

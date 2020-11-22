@@ -8,54 +8,54 @@ excerpt: "Instruction set summary for the NQSAP Computer"
 
 |Name|Description|Flags|
 |:---|:---|:---:|
-|[ADC](../in-details#ADC)|Add with Carry|CZVN|
-|[AND](../in-details#AND)|Logical AND|-Z-N|
-|[ASL](../in-details#ASL)<sub>1</sub>|Arithmetic Shift Left|CZ-N|
-|[BCC](../in-details#BCC)|Branch if Carry Clear|----|
-|[BCS](../in-details#BCS)|Branch if Carry Set|----|
-|[BEQ](../in-details#BEQ)|Branch if Equal|----|
-|[BIT](../in-details#BIT)<sub>2</sub>|Bit Test|-Z--|
-|[BMI](../in-details#BMI)<sub>3</sub>|Branch if Minus|----|
-|[BNE](../in-details#BNE)|Branch if Not Equal|----|
-|[BPL](../in-details#BPL)<sub>3</sub>|Branch if Positive|----|
-|[BVC](../in-details#BVC)<sub>3</sub>|Branch if Overflow Clear|----|
-|[BVS](../in-details#BVS)<sub>3</sub>|Branch if Overflow Set|----|
-|[CLC](../in-details#CLC)<sub>3</sub>|Clear Carry|C---|
-|[CLV](../in-details#CLV)<sub>3</sub>|Clear Overflow|--V-|
-|[CMP](../in-details#CMP)<sub>4</sub>|Compare A|CZVN|
-|[CPX](../in-details#CPX)<sub>4</sub>|Compare X|CZVN|
-|[CPY](../in-details#CPY)<sub>4</sub>|Compare Y|CZVN|
-|[DEC](../in-details#DEC)|Decrement Memory|-Z-N|
-|[DEX](../in-details#DEX)|Decrement X|-Z-N|
-|[DEY](../in-details#DEY)|Decrement Y|-Z-N|
-|[EOR](../in-details#EOR)|Exclusive OR|-Z-N|
-|[INC](../in-details#INC)|Increment Memory|-Z-N|
-|[INX](../in-details#INX)|Increment X|-Z-N|
-|[INY](../in-details#INY)|Increment Y|-Z-N|
-|[JMP](../in-details#JMP)|Jump|----|
-|[JSR](../in-details#JSR)|Jump to Subroutine|----|
-|[LDA](../in-details#LDA)|Load A|----|
-|[LDX](../in-details#LDX)|Load X|----|
-|[LDY](../in-details#LDY)|Load Y|----|
-|[LSR](../in-details#LSR)<sub>5</sub>|Logical Shift Right|CZ-N|
-|[NOP](../in-details#NOP)|No Operation|----|
-|[ORA](../in-details#ORA)|Logical Inclusive OR|-Z-N|
-|[PHA](../in-details#PHA)|Push A|----|
-|[PLA](../in-details#PLA)|Pull A|----|
-|[ROL](../in-details#ROL)<sub>5</sub>|Rotate Left|CZ-N|
-|[ROR](../in-details#ROR)<sub>5</sub>|Rotate Right|CZ-N|
-|[RTS](../in-details#RTS)|Return from Subroutine|----|
-|[SBC](../in-details#SBC)|Subtract with Carry|CZVN|
-|[SEC](../in-details#SEC)|Set Carry|C---|
-|[STA](../in-details#STA)|Store A|----|
-|[STX](../in-details#STX)|Store X|----|
-|[STY](../in-details#STY)|Store Y|----|
-|[TAX](../in-details#TAX)|Transfer A to X|----|
-|[TAY](../in-details#TAY)|Transfer A to Y|----|
-|[TSX](../in-details#TSX)|Transfer SP to X|----|
-|[TXA](../in-details#TXA)|Transfer X to A|----|
-|[TXS](../in-details#TXS)|Transfer X to SP|----|
-|[TYA](../in-details#TYA)|Transfer Y to A|----|
+|[ADC](../in-details#adc)|Add with Carry|CZVN|
+|[AND](../in-details#and)|Logical AND|-Z-N|
+|[ASL](../in-details#asl)<sub>1</sub>|Arithmetic Shift Left|CZ-N|
+|[BCC](../in-details#bcc)|Branch if Carry Clear|----|
+|[BCS](../in-details#bcs)|Branch if Carry Set|----|
+|[BEQ](../in-details#beq)|Branch if Equal|----|
+|[BIT](../in-details#bit)<sub>2</sub>|Bit Test|-Z--|
+|[BMI](../in-details#bmi)<sub>3</sub>|Branch if Minus|----|
+|[BNE](../in-details#bne)|Branch if Not Equal|----|
+|[BPL](../in-details#bpl)<sub>3</sub>|Branch if Positive|----|
+|[BVC](../in-details#bvc)<sub>3</sub>|Branch if Overflow Clear|----|
+|[BVS](../in-details#bvs)<sub>3</sub>|Branch if Overflow Set|----|
+|[CLC](../in-details#clc)<sub>3</sub>|Clear Carry|C---|
+|[CLV](../in-details#clv)<sub>3</sub>|Clear Overflow|--V-|
+|[CMP](../in-details#cmp)<sub>4</sub>|Compare A|CZVN|
+|[CPX](../in-details#cpx)<sub>4</sub>|Compare X|CZVN|
+|[CPY](../in-details#cpy)<sub>4</sub>|Compare Y|CZVN|
+|[DEC](../in-details#dec)|Decrement Memory|-Z-N|
+|[DEX](../in-details#dex)|Decrement X|-Z-N|
+|[DEY](../in-details#dey)|Decrement Y|-Z-N|
+|[EOR](../in-details#eor)|Exclusive OR|-Z-N|
+|[INC](../in-details#inc)|Increment Memory|-Z-N|
+|[INX](../in-details#inx)|Increment X|-Z-N|
+|[INY](../in-details#iny)|Increment Y|-Z-N|
+|[JMP](../in-details#jmp)|Jump|----|
+|[JSR](../in-details#jsr)|Jump to Subroutine|----|
+|[LDA](../in-details#lda)|Load A|----|
+|[LDX](../in-details#ldx)|Load X|----|
+|[LDY](../in-details#ldy)|Load Y|----|
+|[LSR](../in-details#lsr)<sub>5</sub>|Logical Shift Right|CZ-N|
+|[NOP](../in-details#nop)|No Operation|----|
+|[ORA](../in-details#ora)|Logical Inclusive OR|-Z-N|
+|[PHA](../in-details#pha)|Push A|----|
+|[PLA](../in-details#pla)|Pull A|----|
+|[ROL](../in-details#rol)<sub>5</sub>|Rotate Left|CZ-N|
+|[ROR](../in-details#ror)<sub>5</sub>|Rotate Right|CZ-N|
+|[RTS](../in-details#rts)|Return from Subroutine|----|
+|[SBC](../in-details#sbc)|Subtract with Carry|CZVN|
+|[SEC](../in-details#sec)|Set Carry|C---|
+|[STA](../in-details#sta)|Store A|----|
+|[STX](../in-details#stx)|Store X|----|
+|[STY](../in-details#sty)|Store Y|----|
+|[TAX](../in-details#tax)|Transfer A to X|----|
+|[TAY](../in-details#tay)|Transfer A to Y|----|
+|[TSX](../in-details#tsx)|Transfer SP to X|----|
+|[TXA](../in-details#txa)|Transfer X to A|----|
+|[TXS](../in-details#txs)|Transfer X to SP|----|
+|[TYA](../in-details#tya)|Transfer Y to A|----|
 
 **Notes:**
 1. Does not set C flag.  Will be fixed in flags redesign
@@ -67,14 +67,14 @@ excerpt: "Instruction set summary for the NQSAP Computer"
 
 |Name|Description|Flags|
 |:---|:---|:---:|
-|[BRK](../in-details#BRK)<sub>1</sub>|Force Interrupt|----|
-|[CLD](../in-details#CLD)<sub>2</sub>|Clear Decimal Mode|----|
-|[CLI](../in-details#CLI)<sub>1</sub>|Clear Interrupt Disable|----|
-|[PHP](../in-details#PHP)<sub>3</sub>|Push Processor Status|----|
-|[PLP](../in-details#PLP)<sub>3</sub>|Pull Processor Status|----|
-|[RTI](../in-details#RTI)<sub>1</sub>|Return from Interrupt|----|
-|[SED](../in-details#SED)<sub>2</sub>|Set Decimal Mode|----|
-|[SEI](../in-details#SEI)<sub>1</sub>|Set interrupt Disable|----|
+|[BRK](../in-details#brk)<sub>1</sub>|Force Interrupt|----|
+|[CLD](../in-details#cld)<sub>2</sub>|Clear Decimal Mode|----|
+|[CLI](../in-details#cli)<sub>1</sub>|Clear Interrupt Disable|----|
+|[PHP](../in-details#php)<sub>3</sub>|Push Processor Status|----|
+|[PLP](../in-details#plp)<sub>3</sub>|Pull Processor Status|----|
+|[RTI](../in-details#rti)<sub>1</sub>|Return from Interrupt|----|
+|[SED](../in-details#sed)<sub>2</sub>|Set Decimal Mode|----|
+|[SEI](../in-details#sei)<sub>1</sub>|Set interrupt Disable|----|
 
 **Notes:**
 1. No support for interrupts
@@ -84,19 +84,19 @@ excerpt: "Instruction set summary for the NQSAP Computer"
 
 |Name|Description|Flags|
 |:---|:---|:---:|
-|[DEA](../in-details#DEA)|Decrement A|-Z-N|
-|[HLT](../in-details#HLT)|Halt|----|
-|[INA](../in-details#INA)|Increment A|-Z-N|
-|[JCC](../in-details#JCC)|Jump if Carry Clear|----|
-|[JCS](../in-details#JCS)|Jump if Carry Set|----|
-|[JEQ](../in-details#JEQ)|Jump if Equal|----|
-|[JMI](../in-details#JMI)|Jump if Minus|----|
-|[JNE](../in-details#JNE)|Jump if Not Equal|----|
-|[JPL](../in-details#JPL)|Jump if Positive|----|
-|[JVC](../in-details#JVC)|Jump if Overflow Clear|----|
-|[JVS](../in-details#JVS)|Jump if Overflow Set|----|
-|[NOT](../in-details#NOT)|Bitwise NOT A|-Z-N|
-|[OUT](../in-details#OUT)|Output A|----|
+|[DEA](../in-details#dea)|Decrement A|-Z-N|
+|[HLT](../in-details#hlt)|Halt|----|
+|[INA](../in-details#ina)|Increment A|-Z-N|
+|[JCC](../in-details#jcc)|Jump if Carry Clear|----|
+|[JCS](../in-details#jcs)|Jump if Carry Set|----|
+|[JEQ](../in-details#jeq)|Jump if Equal|----|
+|[JMI](../in-details#jmi)|Jump if Minus|----|
+|[JNE](../in-details#jne)|Jump if Not Equal|----|
+|[JPL](../in-details#jpl)|Jump if Positive|----|
+|[JVC](../in-details#jvc)|Jump if Overflow Clear|----|
+|[JVS](../in-details#jvs)|Jump if Overflow Set|----|
+|[NOT](../in-details#not)|Bitwise NOT A|-Z-N|
+|[OUT](../in-details#out)|Output A|----|
 
 
-*this file was generated by nqsap-instructions.py at 22-Nov-2020 13:17:41*
+*this file was generated by nqsap-instructions.py at 22-Nov-2020 13:20:37*

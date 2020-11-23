@@ -36,6 +36,7 @@ class GeneralInstructionRecord:
         self.isComplete = row['Complete'].strip().lower() != 'n'
         self.notes = row['Notes'].strip()
         self.specifics = {}
+        self.modes = []
 
     def __str__(self):
         progress = 'done' if self.isComplete else 'progress'
@@ -201,14 +202,11 @@ def makeEnums(filename):
 
 def writeInstructionTable(f, iList, notes, title):
     f.write('## ' + title + '\n\n')
-
-
-
-    f.write('|' + '|'.join(['Name', 'Description', 'Flags']) + '|\n')
-    f.write('|' + '|'.join([':---', ':---', ':---:']) + '|\n')
+    f.write('|' + '|'.join(['Name', 'Description', 'Flags', 'Address Modes']) + '|\n')
+    f.write('|' + '|'.join([':---', ':---', ':---:', ':---']) + '|\n')
     for gi in iList:
         sub = notes.getSubscript(gi.notes) if notes and gi.notes else ""
-        f.write('|' + '|'.join([detailsLink(gi.name)+sub, gi.description, gi.flagsString]) + '|\n')
+        f.write('|' + '|'.join([detailsLink(gi.name)+sub, gi.description, gi.flagsString, ','.join(gi.modes)]) + '|\n')
     f.write('\n')
     if notes:
         notes.writeNotes(f)
@@ -366,14 +364,22 @@ with open(specificFile, 'rb') as inFile:
         #print insta
         if si.name in instructions:
             instructions[si.name].specifics[si.mode] = si
+            instructions[si.name].modes.append(si.mode)
         else:
             print "No general instruction for specific", si
 
 for name in sorted(instructions):
-    if not instructions[name].specifics and instructions[name].isNqsap:
+    gi = instructions[name]
+    if not gi.specifics and gi.isNqsap:
         print "Supported instruction with no specific instructions", i
-    elif instructions[name].specifics and not instructions[name].isNqsap:
+    elif gi.specifics and not gi.isNqsap:
         print "Unsupported instruction with specific instructions", name
+    # Put the instructions modes in order
+    orderedModes = []
+    for m in addressOrder:
+        if m in gi.modes:
+            orderedModes.append(m)
+    gi.modes = orderedModes
 
 makeEnums('in-enums.cpp')
 makeInstructionSummaries('../_docs/in-10-summary.md')

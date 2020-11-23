@@ -2,12 +2,14 @@
 
 The Not Quite Simple As Possible Computer
 
-The NQSAP is a breadoard TTL computer that follows the
+The NQSAP is a breadboard TTL computer that follows the
 [Ben Eater 8-bit computer (SAP-1)](https://eater.net/8bit) design with some enhancements
 and extensions.
 
 Highlights of the design are:
 
+* 6502-inspired instruction set that provides equivalents to most of the instructions
+and addressing modes
 * 8-bit addressing extends the size of memory and number of opcodes
 * 74LS181 ALU instead of adder provides arithmetic and logic operations including add,
   subtract, AND, OR, and XOR

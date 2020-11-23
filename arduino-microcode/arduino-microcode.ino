@@ -1,6 +1,6 @@
 #include "Arduino.h"
 
-static const char * MY_VERSION = "2.0";
+static const char * MY_VERSION = "3.0";
 
 // IO lines for the EEPROM device control
 // Pins D2..D9 are used for the data bus.
@@ -109,30 +109,38 @@ void fail() {
 
 //               ROM3    ROM2    ROM1    ROM0
 //             +------++------++------++------+
-// ROM3        WWWWxRRR765432107654321076543210
-#define WM   0b00010000000000000000000000000000L  // 1 Write Memory
+// ROM3        WWWWRRRR765432107654321076543210
+#define WR   0b00010000000000000000000000000000L  // 1 Write RAM
 #define WA   0b00100000000000000000000000000000L  // 2 Write A
 #define WB   0b00110000000000000000000000000000L  // 3 Write B
 #define WX4  0b01000000000000000000000000000000L  // 4
 #define WS   0b01010000000000000000000000000000L  // 5 Write SP
 #define WP   0b01100000000000000000000000000000L  // 6 Write PC (Jump)
 #define WX7  0b01110000000000000000000000000000L  // 7
-#define WX8  0b10000000000000000000000000000000L  // 8
-#define WMA  0b10010000000000000000000000000000L  // 9 Write Memory Address
-#define WXA  0b10100000000000000000000000000000L  // A
-#define WXB  0b10110000000000000000000000000000L  // B
+#define WD   0b10000000000000000000000000000000L  // 8 Write D (Adder)
+#define WM   0b10010000000000000000000000000000L  // 9 Write Memory Address
+#define WX   0b10100000000000000000000000000000L  // A Write X
+#define WY   0b10110000000000000000000000000000L  // B Write Y
 #define WO   0b11000000000000000000000000000000L  // C Write Output
 #define WXD  0b11010000000000000000000000000000L  // D
 #define WXE  0b11100000000000000000000000000000L  // E
 #define WI   0b11110000000000000000000000000000L  // F Write IR
 
-#define RM   0b00000001000000000000000000000000L  // 1 Read Memory
+#define RR   0b00000001000000000000000000000000L  // 1 Read RAM
 #define RA   0b00000010000000000000000000000000L  // 2 Read A
 #define RB   0b00000011000000000000000000000000L  // 3 Read B
-#define RL  0b00000100000000000000000000000000L   // 4 Read L (ALU result)
-#define RS   0b00000101000000000000000000000000L  // Read SP
+#define RL   0b00000100000000000000000000000000L  // 4 Read L (ALU result)
+#define RS   0b00000101000000000000000000000000L  // 5 Read SP
 #define RP   0b00000110000000000000000000000000L  // 6 Read PC
 #define RX7  0b00000111000000000000000000000000L  // 7
+#define RD   0b00001000000000000000000000000000L  // 8 Read D (Adder)
+#define RX9  0b00001001000000000000000000000000L  // 9
+#define RX   0b00001010000000000000000000000000L  // A Read X
+#define RY   0b00001011000000000000000000000000L  // B Read Y
+#define RXC  0b00001100000000000000000000000000L  // C
+#define RXD  0b00001101000000000000000000000000L  // D
+#define RXE  0b00001110000000000000000000000000L  // E
+#define RXF  0b00001111000000000000000000000000L  // F
 
 // ROM2
 // TODO not used now - burnInstructionGroup hard-coded to write test
@@ -162,78 +170,183 @@ void fail() {
 #define CR   0b00000000000000000000000000100000L  // 20 Clear Ring Counter
 #define AC   0b00000000000000000000000000010000L  // 10 ALU Carry Flag
 #define LF   0b00000000000000000000000000001000L  // 08 Load Flags
-#define XX02 0b00000000000000000000000000000100L
-#define XX01 0b00000000000000000000000000000010L
-#define XX00 0b00000000000000000000000000000001L
+#define XX03 0b00000000000000000000010000000000L
+#define DY   0b00000000000000000000000000000010L  // 02 DXY Select X/Y
+#define DZ   0b00000000000000000000000000000001L  // 01 DXY Select zero
 
-#define N  CR           // Shorthand for start next instruction
-#define RPI  RP | IP    // Shorthand for Read PC and post increment
-#define F1  RPI | WMA   // Instruction fetch step 1
-#define F2  RM  | WI    // Instruction fetch step 2
-#define FA  RPI | WMA   // Fetch argument (operand) step 1
-#define SI  SCE | SPI   // Stack Pointer increment
-#define SD  SCE         // Stack Pointer decrement
+#define N     CR            // Start next instruction
+#define RPI   RP | IP       // Read PC and post increment
+#define F1    RPI | WM      // Instruction fetch step 1
+#define F2    RR  | WI      // Instruction fetch step 2
+#define FA    RPI | WM      // Fetch argument (operand) step 1
+#define SI    SCE | SPI     // Stack Pointer increment
+#define SD    SCE           // Stack Pointer decrement
+#define RDZ   RD|DZ         // Read D+zero (read D)
+#define RDX   RD            // Read D+X
+#define RDY   RD|DY         // Read D+Y
 enum {
     // Status flag bits.  These are based at the least significant bit position, not at
     // their position in the address word.  These values can be used when iterating
     // between zero and NUM_FLAG_COMBOS.
     SF_Z = 0x01,        // Zero
     SF_C = 0x02,        // Carry
+    SF_M = 0x04,        // Minus
+    SF_V = 0x08         // oVerflow
 };
 
 
 // Instruction opcodes.  Those marked with an asterisk use the ALU and thus must have
 // specific opcodes that match the bits that are hardwired from the IR to the ALU control.
 enum {
-    // 00 - 1f   Immediate - ALU Arithmetic
+    // 00 - 0f   A, Implied, Relative, and Indirect - ALU Arithmetic
     IP_NOP = 0x00,  // no operation
-    IM_LDA = 0x03,  // load immediate to A
-    IM_JMP = 0x05,  // jump
-    IM_SBC = 0x06,  // * subtract with carry A
-    IP_OUT = 0x07,  // output A
-    IM_ADC = 0x09,  // * add with carry A
-    IM_JZ  = 0x0a,  // jump if zero
-    IM_JC  = 0x0b,  // jump if carry
-    IP_HLT = 0x0f,  // halt
+    IP_OUT = 0x01,  // output A
+    IP_RTS = 0x0a,  // return from subroutine
+    IN_JMP = 0x0b,  // jump
+    AA_ASL = 0x0c,  // * arithmetic shift left A
 
-    // 10 - 1f  Immediate - ALU Logic
-    IP_PHA = 0x11,  // push A
-    IP_PLA = 0x12,  // pull A
-    IM_EOR = 0x16,  // * XOR A
-    IM_AND = 0x1b,  // * AND A
-    IM_JSR = 0x1c,  // jump to subroutine
-    IP_RTS = 0x1d,  // return from subroutine
-    IM_OR  = 0x1e,  // * OR A
+    // 10 - 1f   A, Implied, Relative, and Indirect - ALU Logic
+    AA_NOT = 0x10,  // * NOT A
+    IP_PHA = 0x16,  // push A
+    IP_CLC = 0x17,  // clear carry flag
+    AA_LSR = 0x18,  // * logical shift left
+    AA_ROL = 0x19,  // rotate left thru carry
+    AA_ROR = 0x1a,  // rotate right thru carry
+    AB_BIT = 0x1b,  // * bit test A with memory
+    IP_PLA = 0x1e,  // pull A
+    IP_HLT = 0x1f,  // halt
 
-    // 20 - 2f   Absolute ALU Arithmetic and ALU unary
-    IP_INC = 0x20,  // * increment A
-    AB_LDA = 0x23,  // load A from memory
-    AB_STA = 0x24,  // store A to memory
-    AB_SBC = 0x26,  // * subtract with carry A
-    AB_ADC = 0x29,  // * add with carry A
-    IP_ASL = 0x2c,  // * arithmetic shift left A
-    IP_DEC = 0x2f,  // * decrement A
+    // 20 - 2f   Immediate - ALU Arithmetic
+    AA_INA = 0x20,  // * increment A
+    IM_LDA = 0x21,  // load immediate to A
+    IM_LDX = 0x24,  // load immediate to X
+    IM_SBC = 0x26,  // * subtract with carry
+    IM_LDY = 0x27,  // load immediate to Y
+    IM_ADC = 0x29,  // * add with carry A
+    RE_BCC = 0x2a,  // branch on carry clear
+    RE_BCS = 0x2b,  // branch on carry set
+    AA_DEA = 0x2f,  // * decrement A
 
-    // 30 - 3f  Absolute ALU Logic Absolute and ALU unary
-    IP_NOT = 0x30,  // * NOT A
-    AB_EOR = 0x36,  // * exlcusive OR A
-    AB_AND = 0x3b,  // * AND A
-    AB_OR  = 0x3e,  // * OR A
+    // 30 - 3f  Immediate - ALU Logic
+    IM_CMP = 0x31,  // compare A immediate
+    IM_CPX = 0x32,  // compare X immediate
+    IM_CPY = 0x33,  // compare Y immediate
+    IM_EOR = 0x36,  // * XOR A
+    IP_SEC = 0x37,  // set carry flag
+    IM_AND = 0x3b,  // * AND A
+    IM_ORA = 0x3e,  // * OR A
 
-    // These instructions are temporary.  When the X/Y/T registers are added, most of
-    // these will be replaced.
-    // The JPA will be replaced by ABS,X and ABS,Y addressing modes.  TXS and TSX will
-    // replace TAS and TSA.
+    // 40 - 4f   Absolute - ALU Arithmetic
+    AB_INC = 0x40,  // * increment memory
+    AB_LDA = 0x41,  // load A from memory
+    AB_STA = 0x42,  // store A to memory
+    AB_LDX = 0x44,  // load X
+    AB_STX = 0x45,  // store X
+    AB_SBC = 0x46,  // * subtract with carry memory
+    AB_LDY = 0x47,  // load Y
+    AB_STY = 0x48,  // store Y
+    AB_ADC = 0x49,  // * add with carry memory
+    AB_JSR = 0x4a,  // jump to subroutine
+    AB_JMP = 0x4b,  // jump
+    AB_ASL = 0x4c,  // * arithmetic shift left memory
+    AB_DEC = 0x4f,  // * decrement memory
 
-    // 40 - 4f   General
-    IP_JPA = 0x49,    // * jump immediate+A       * this opcode is ADD *
+    // 50 - 5f  Absolute - ALU Logic
+    AB_CMP = 0x51,  // compare A
+    AB_CPX = 0x52,  // compare X
+    AB_CPY = 0x53,  // compare Y
+    AB_EOR = 0x56,  // * exlcusive OR A
+    IP_CLV = 0x57,  // clear overflow flag
+    AB_LSR = 0x58,  // logical shift right memory
+    AB_ROL = 0x59,  // rotate left thru carry memory
+    AB_ROR = 0x5a,  // rotate right thru carry memory
+    AB_AND = 0x5b,  // * AND A
+    AB_ORA = 0x5e,  // * OR A
 
-    // 50 -5f  General
-    IM_LDS = 0x50,  // load immediate to SP
-    IP_TAS = 0x51,  // transfer A to SP
-    IP_TSA = 0x52   // transfer SP to A
+    // 60 - 6f   Absolute+X - ALU Arithmetic
+    AX_INC = 0x60,  // * increment memory
+    AX_LDA = 0x61,  // load A from memory
+    AX_STA = 0x62,  // store A to memory
+    IP_TAX = 0x64,  // transfer A to X
+    IP_TXA = 0x65,  // transfer X to A
+    AX_SBC = 0x66,  // * subtract with carry memory
+    AX_LDY = 0x67,  // load Y
+    AX_STY = 0x68,  // store Y
+    AX_ADC = 0x69,  // * add with carry memory
+    RE_BNE = 0x6a,  // branch if not equal (zero clear)
+    RE_BEQ = 0x6b,  // branch if equal (zero set)
+    AX_ASL = 0x6c,  // * arithmetic shift left memory
+    AX_DEC = 0x6f,  // * decrement memory
 
-    // 60 - ff unused
+    // 70 - 7f  Absolute+X - ALU Logic
+    AX_CMP = 0x71,  // compare A
+    AX_EOR = 0x76,  // * exlcusive OR A
+    AX_LSR = 0x78,  // logical shift right memory
+    AX_ROL = 0x79,  // rotate left thru carry memory
+    AX_ROR = 0x7a,  // rotate right thru carry memory
+    AX_AND = 0x7b,  // * AND A
+    AX_ORA = 0x7e,  // * OR A
+
+    // 80 - 8f  Absolute+Y - ALU Arithmetic
+    AY_LDA = 0x81,  // load A from memory
+    AY_STA = 0x82,  // store A to memory
+    AY_LDX = 0x84,  // load X
+    AY_STX = 0x85,  // store X
+    AY_SBC = 0x86,  // * subtract with carry memory
+    IP_TAY = 0x87,  // transfer A to Y
+    IP_TYA = 0x88,  // transfer Y to A
+    AY_ADC = 0x89,  // * add with carry memory
+    RE_BPL = 0x8a,  // branch if plus (minus clear)
+    RE_BMI = 0x8b,  // branch if minus (minus set)
+
+    // 90 - 9f  Absolute+Y - ALU Logic
+    AY_CMP = 0x91,  // compare A
+    AY_EOR = 0x96,  // * exlcusive OR A
+    AY_AND = 0x9b,  // * AND A
+    AY_ORA = 0x9e,  // * OR A
+
+    // a0 - af  Indexed Indirect (X) - ALU Arithmetic
+    IP_INX = 0xa0,  // * increment X
+    IX_LDA = 0xa1,  // load A from memory
+    IX_STA = 0xa2,  // store A to memory
+    IP_TSX = 0xa4,  // transfer SP to X
+    IP_TXS = 0xa5,  // transfer X to SP
+    IX_SBC = 0xa6,  // * subtract with carry memory
+    IX_ADC = 0xa9,  // * add with carry memory
+    RE_BVC = 0xaa,  // branch if overflow clear
+    RE_BVS = 0xab,  // branch if overflow set
+    IP_DEX = 0xaf,  // * decrement X
+
+    // b0 - bf  Indexed Indirect (X) - ALU Logic
+    IX_CMP = 0xb1,  // compare A
+    IX_EOR = 0xb6,  // * exlcusive OR A
+    AB_JCC = 0xb7,  // jump if carry clear
+    AB_JNE = 0xb8,  // jump if not equal (zero clear)
+    AB_JPL = 0xb9,  // jump if plus (minus clear)
+    AB_JVC = 0xba,  // jump if overflow clear
+    IX_AND = 0xbb,  // * AND A
+    IX_ORA = 0xbe,  // * OR A
+
+    // c0 - cf  Indirect Indexed (Y) - ALU Arithmetic
+    IP_INY = 0xc0,  // * increment Y
+    IY_LDA = 0xc1,  // load A from memory
+    IY_STA = 0xc2,  // store A to memory
+    IY_SBC = 0xc6,  // * subtract with carry memory
+    IY_ADC = 0xc9,  // * add with carry memory
+    IP_DEY = 0xcf,  // * decrement Y
+
+    // d0 - df  Indirect+Y - ALU Logic
+    IY_CMP = 0xd1,  // compare A
+    IY_EOR = 0xd6,  // * exlcusive OR A
+    AB_JCS = 0xd7,  // jump if carry set
+    AB_JEQ = 0xd8,  // jump if equal (zero set)
+    AB_JMI = 0xd9,  // jump if minus (minus set)
+    AB_JVS = 0xda,  // jump if overflow set
+    IY_AND = 0xdb,  // * AND A
+    IY_ORA = 0xde,  // * OR A
+
+    // e0 - ef unused
+    // f0 - ff unused
 };
 
 
@@ -254,67 +367,54 @@ enum {
     ALU_S1 =              0b00000010,
     ALU_S0 =              0b00000001,
 
-    // The flags below are per-instruction options.  They are used only in the definition
-    // table to assist in building the microcode.  They do not map to any physical bits
-    // and are defined outside of the 8-bit opcode area to avoid confusion.
     // The ALU_DEF_CI flag indicates that an ALU instruction needs its microcode to set
-    // the AC bit for the ALU CARRY-IN flag input.
-
-    // The ALU_DEF_BINARY flag indicates an instruction that uses both the A and B operand
-    // inputs to the ALU.  The A operand always comes from the current contents of the A
-    // register.  Multiple version of each instruction can be created (with  different
-    // opcodes) so that the B operand could come from memory, immediate value, or other
-    // options.  There is no point in generating multiple instruction variants for the
-    // unary operations, because they always work only on the contents of the A register.
-    ALU_DEF_CI      = 0b000100000000,
-    ALU_DEF_BINARY  = 0b001000000000,
+    // the AC bit for the ALU CARRY-IN flag input. The ALU_DEF_CI flag is used only in the
+    // definition table to assist in building the microcode.  It does not map to any
+    // physical bits and is defined outside of the 8-bit opcode area to avoid confusion.
+    //
+    // The A operand always comes from the current contents of the A register.  Multiple
+    // version of each instruction can be created (with  different opcodes) so that the B
+    // operand could come from memory, immediate value, or other options.
+    //
+    // The ALU unary operations only work on the contents of the A register, so the
+    // multiple addressing modes don't apply.  These instructions are defined in the
+    // instruction template tables rather than being generated from the ALU tables.
+    ALU_DEF_CI      = 0b000100000000
 };
 
-// This table contains the opcodes that are used for ALU instructions plus additional bits
-// to indicate if a second operand is specified for the B register and if the AC flag
-// should be set in the microcode steps for the instruction.  Many of the combinations of
-// control bits in the ALU do not map to useful operations, so this is a small subset of
-// the complete ALU operation set.  Note that some ALU operations in the table are
-// commented out.  They are to show ALU operations that might be used by the underlying
-// microcode, but are not useful as standalone instructions.  For example, the B operation
-// us a worthless instruction, but the ALU operation is used by the CALL instruction so
-// that B can be used for temporary storage.  The all-zeroes or all-ones operations
-// may also be useful utilities.
+// This table contains the opcodes that are used for ALU instructions plus an additional
+// bit to indicate if the AC flag should be set in the microcode steps for the
+// instruction.  Many of the combinations of control bits in the ALU do not map to useful
+// operations, so this is a small subset of the complete 74181 ALU operation set.  Note
+// that some ALU operations in the table are commented out.  They are to show unary
+// operations or ALU operations that might be used by the underlying microcode, but are
+// not useful as standalone instructions.  For example, the all-zeroes or all-ones
+// operations may be used by the microcode to put fixed values in registers.
+
+// The aluInstructionDefinitions table is used to create multiple versions of each
+// instruction with different argument processing. For example, "ADD A to immediate value"
+// and  "ADD A to value from memory indexed by X".  All of the two argument ALU operations
+// with the same addressing mode, like ADD immediate and XOR immediate, share the same
+// microcode.  This code is generated programmatically based on a selected argument
+// addressing mode.
 
 uint16_t aluInstructionDefinitions[] = {
     // M=0 ALU Arithmetic operations
-    0,                                                               // 00 INC - A plus 1
-    //                                              ALU_S1 | ALU_S0, // 03 zero - all zero
-    //               ALU_DEF_CI                   | ALU_S1 | ALU_S0, // 03 ones - all one
-    ALU_DEF_BINARY                       | ALU_S2 | ALU_S1,          // 06 SUB - A minus B
-    ALU_DEF_BINARY | ALU_DEF_CI | ALU_S3                   | ALU_S0, // 09 ADD - A plus B
-                     ALU_DEF_CI | ALU_S3 | ALU_S2,                   // 0c ASL - A + A
-                     ALU_DEF_CI | ALU_S3 | ALU_S2 | ALU_S1 | ALU_S0, // 0f DEC - A minus 1
+// 0,                                               // 00 INC - A plus 1
+//                                 ALU_S1 | ALU_S0, // 03 zero - all zero
+//  ALU_DEF_CI                   | ALU_S1 | ALU_S0, // 03 ones - all one
+                          ALU_S2 | ALU_S1,          // 06 SUB - A minus B
+    ALU_DEF_CI | ALU_S3                   | ALU_S0, // 09 ADD - A plus B
+//  ALU_DEF_CI | ALU_S3 | ALU_S2,                   // 0c ASL - A + A
+//  ALU_DEF_CI | ALU_S3 | ALU_S2 | ALU_S1 | ALU_S0, // 0f DEC - A minus 1
 
     // M=1 ALU Logic operations
-                     ALU_M,                                          // 10 NOT - not A
-    ALU_DEF_BINARY | ALU_M               | ALU_S2 | ALU_S1,          // 16 XOR - A xor B
-    //               ALU_M      | ALU_S3          | ALU_S1,          // 1a B - returns B
-    ALU_DEF_BINARY | ALU_M      | ALU_S3          | ALU_S1 | ALU_S0, // 1b AND - A and B
-    ALU_DEF_BINARY | ALU_M      | ALU_S3 | ALU_S2 | ALU_S1           // 1e OR - A or B
+//  ALU_M,                                          // 10 NOT - not A
+    ALU_M               | ALU_S2 | ALU_S1,          // 16 XOR - A xor B
+//  ALU_M      | ALU_S3          | ALU_S1,          // 1a B - returns B
+    ALU_M      | ALU_S3          | ALU_S1 | ALU_S0, // 1b AND - A and B
+    ALU_M      | ALU_S3 | ALU_S2 | ALU_S1           // 1e OR - A or B
 };
-
-// The ALU instruction group options allow programmatic generation of a group of ALU
-// instructions.  By specifying different group options, the aluInstructionDefinitions
-// table can be used to create multiple instruction groups with different processing.
-//
-// For example, one group could have instructions like "ADD A to immediate value" and
-// another could have "ADD A to value from memory".
-// The OPT_UNARY flag allows selective generation of the instructions that only have a
-// single operand (not ALU_IN_BINARY), so that multiple versions of these instructions
-// are not generated for each addressing mode.
-enum {
-    ALU_OPT_UNARY     = 0b00000001,     // Generate unary instructions
-    ALU_OPT_IMMEDIATE = 0b00000010,     // Operands are A and immediate value
-    ALU_OPT_ABSOLUTE  = 0b00000100,     // Operands are A and value from memory location
-    ALU_OPT_NONE      = 0b00001000      // Do not generate ALU instructions
-};
-
 
 
 // ROM addressing 32K = 15 address bits
@@ -341,6 +441,10 @@ enum {
 // If the number of flag bits increases, the two ROM select bits could be reclaimed and
 // each ROM could be burned uniquely instead.
 
+// TODO - increase FLAG_COMBOS to 16 to accomodate the M and V flags.  This will consume
+// the two ROM ID bits, so the code will no longer be able to build identical ROMs.
+// instead, the programmer will use DIP switches to identify the ROM to be burned and will
+// burn only the 8 control bits for that ROM.
 enum {
     NUM_ROMS = 4,
     NUM_FLAG_COMBOS = 4,
@@ -353,6 +457,19 @@ enum {
     OPCODE_MASK = GROUP_MASK | INSTRUCTION_MASK
 };
 
+// Instruction addressing modes
+enum {
+    ADDR_MODE_MASK = 0xe0,  // top 3 bits are address mode
+    ADDR_MODE_00 = 0x00,    // No ALU instructions
+    ADDR_MODE_IM = 0x20,    // #20 immediate value
+    ADDR_MODE_AB = 0x40,    // $20 absolute memory location
+    ADDR_MODE_AX = 0x60,    // $20,X absolute memory location + X
+    ADDR_MODE_AY = 0x80,    // $20,Y absolute memory location + Y
+    ADDR_MODE_IX = 0xa0,    // ($20,X) indexed indirect memory location + X
+    ADDR_MODE_IY = 0xc0,    // ($20),Y indirect indexed memory location + Y
+    ADDR_MODE_E0 = 0xe0     // No ALU instructions
+};
+
 typedef uint32_t microcode_t;
 typedef microcode_t template_t[NUM_INSTRUCTIONS][NUM_STEPS];
 
@@ -361,129 +478,301 @@ typedef microcode_t template_t[NUM_INSTRUCTIONS][NUM_STEPS];
 // effectively a NOP.  The customizeCodeGroup code will replace this with the microcode
 // for an unconditional jump for flag combinations that match the type of jump.
 
-//const microcode_t template0[NUM_INSTRUCTIONS][NUM_STEPS] PROGMEM = {
+
+// unary A instruction
+// code[index][2] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
+
 const template_t template0 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 00 IP_NOP
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 01
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 00 IP_NOP
+  { F1, F2, RA|WO|N,  0,          0,       0,        0,       0 }, // 01 IP_OUT
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 02
-  { F1, F2, FA,       RM|WA|N,    0,       0,        0,       0 }, // 03 IM_LDA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 03
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 04
-  { F1, F2, FA,       RM|WP|N,    0,       0,        0,       0 }, // 05 IP_JMP
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 06 IM_SBC *
-  { F1, F2, RA|WO|N,  0,          0,       0,        0,       0 }, // 07 IP_OUT
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 05
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 06
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 07
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 08
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 09 IM_ADC *
-  { F1, F2, 0,        IP|N,       0,       0,        0,       0 }, // 0a IM_JZ // TODO use T2?
-  { F1, F2, 0,        IP|N,       0,       0,        0,       0 }, // 0b IM_JC
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 09
+  { F1, F2, SD,       RS|WM,      RR|WP|N, 0,        0,       0 }, // 0a IP_RTS
+  { F1, F2, FA,       RR|WM,      RR|WP|N, 0,        0,       0 }, // 0b IN_JMP
+  { F1, F2, RL|WA|AC|N, 0,        0,       0,        0,       0 }, // 0c AA_ASL *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0d
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0e
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 0f IP_HLT
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0f
 };
 
 const template_t template1 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 10
-  { F1, F2, RS|WMA,   RA|WM|SI|N, 0,       0,        0,       0 }, // 11 PHA
-  { F1, F2, SD,       RS|WMA,     RM|WA|N, 0,        0,       0 }, // 12 PLA
+  { F1, F2, RL|WA|N,  0,          0,       0,        0,       0 }, // 10 AA_NOT *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 11
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 12
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 13
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 14
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 15
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 16 IM_EOR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 17
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 18
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 19
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1a
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 1b IM_AND *
-  { F1, F2, FA,       RM|WB,      RS|WMA,  WM|RP|SI, RB|WP|N, 0 }, // 1c IM_JSR
-  { F1, F2, SD,       RS|WMA,     RM|WP|N, 0,        0,       0 }, // 1d IP_RTS
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 1e IM_OR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 1f
+  { F1, F2, RS|WM,    RA|WR|SI|N, 0,       0,        0,       0 }, // 16 IP_PHA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 17 IP_CLC $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 18 AA_LSR $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 19 AA_ROL $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1a AA_ROR $
+  { F1, F2, FA,       RR|WB,      LF|N,    0,        0,       0 }, // 1b AB_BIT *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1d
+  { F1, F2, SD,       RS|WM,      RR|WA|N, 0,        0,       0 }, // 1e IP_PLA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 1f IP_HLT
 };
 
+// Immediate
 const template_t template2 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 20 IP_INC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 21
+  { F1, F2, RL|WA|N,  0,          0,       0,        0,       0 }, // 20 AA_INA *
+  { F1, F2, FA,       RR|WA|N,    0,       0,        0,       0 }, // 21 IM_LDA
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 22
-  { F1, F2, FA,       RM|WMA,     RM|WA|N, 0,        0,       0 }, // 23 AB_LDA
-  { F1, F2, FA,       RM|WMA,     RA|WM|N, 0,        0,       0 }, // 24 AB_STA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 23
+  { F1, F2, FA,       RR|WX|N,    0,       0,        0,       0 }, // 24 IM_LDX
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 25
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 26 AB_SBC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 27
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 26 IM_SBC *
+  { F1, F2, FA,       RR|WY|N,    0,       0,        0,       0 }, // 21 IM_LDY
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 28
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 29 AB_ADC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2a
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2b
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 2c IP_ASL *
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 29 IM_ADC *
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 2a RE_BCC
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 2b RE_BCS
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2c
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2d
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2e
-  { 0,  0,  0,        0,          0,       0,        0,       0 }  // 2f IP_DEC *
+  { F1, F2, RL|WA|AC|N, 0,        0,       0,        0,       0 }  // 2f AA_DEA *
 };
 
 const template_t template3 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 30 IP_NOT *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 31
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 32
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 33
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 30
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 31 IM_CMP $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 32 IM_CPX $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 33 IM_CPY $
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 34
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 35
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 36 AB_EOR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 37
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 36 IM_EOR *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 37 IP_SEC $
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 38
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 39
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3a
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3b AB_AND *
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3b IM_AND *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3c
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3d
-  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3e AB_OR *
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3e IM_ORA *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 3f
 };
 
+// Absolute
 const template_t template4 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 40
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 41
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 42
+  { F1, F2, FA,       RR|WM,      RA|WB,   RR|WA,    RL|WR,   RB|WA|N }, // 40 AB_INC *
+  { F1, F2, FA,       RR|WM,      RR|WA|N, 0,        0,       0 }, // 41 AB_LDA
+  { F1, F2, FA,       RR|WM,      RA|WR|N, 0,        0,       0 }, // 42 AB_STA
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 43
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 44
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 45
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 46
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 47
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 48
-  { F1, F2, FA,       RM|WB,      RL|WP|N, 0,        0,       0 }, // 49 IP_JPA * ALU op=ADD
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4a
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4b
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4c
+  { F1, F2, FA,       RR|WM,      RR|WX|N, 0,        0,       0 }, // 44 AB_LDX
+  { F1, F2, FA,       RR|WM,      RX|WR|N, 0,        0,       0 }, // 45 AB_STX
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 46 AB_SBC *
+  { F1, F2, FA,       RR|WM,      RR|WY|N, 0,        0,       0 }, // 47 AB_LDY
+  { F1, F2, FA,       RR|WM,      RY|WR|N, 0,        0,       0 }, // 48 AB_STY
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 49 AB_ADC *
+  { F1, F2, FA,       RR|WB,      RS|WM,   WR|RP|SI, RB|WP|N, 0 }, // 4a AB_JSR
+  { F1, F2, FA,       RR|WP|N,    0,       0,        0,       0 }, // 4b AB_JMP
+  { F1, F2, FA,       RA|WB,      RR|WA,   RL|WR|AC, RB|WA|N, 0 }, // 4c AB_ASL *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4d
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4e
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 4f
+  { F1, F2, FA,       RA|WB,      RR|WA,   RL|WR|AC, RB|WA|N, 0 }  // 4f AB_DEC *
 };
 
 const template_t template5 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, FA,       RM|WS|N,    0,       0,        0,       0 }, // 50 IM_LDS
-  { F1, F2, RS|WA|N,  0,          0,       0,        0,       0 }, // 51 IP_TAS
-  { F1, F2, RA|WS|N,  0,          0,       0,        0,       0 }, // 52 IP_TSA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 53
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 50
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 51 AB_CMP $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 52 AB_CPX $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 53 AB_CPY $
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 54
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 55
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 56
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 57
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 58
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 59
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5a
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5b
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 56 AB_EOR *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 57 IP_CLV $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 58 AB_LSR $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 59 AB_ROL $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5a AB_ROR $
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 5b AB_AND *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5c
   { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5d
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5e
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 5e AB_ORA *
   { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 5f
 };
 
+// Absolute + X
+//  { F1, F2, FA,       RR|WD,      RDX|WM,  RA|WB,    RR|WA,   RL|WR,   RB|WA,N }, // 60 AX_INC *
+const template_t template6 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 60 AX_INC *$ (too many steps)
+  { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WA|N,  0,       0 }, // 61 AX_LDA
+  { F1, F2, FA,       RR|WD,      RDX|WM,  RA|WR|N,  0,       0 }, // 62 AX_STA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 63
+  { F1, F2, RA|WX|N,  0,          0,       0,        0,       0 }, // 64 IP_TAX
+  { F1, F2, RX|WA|N,  0,          0,       0,        0,       0 }, // 65 IP_TXA
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 66 AX_SBC *
+  { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WY|N,  0,       0 }, // 67 AX_LDY
+  { F1, F2, FA,       RR|WD,      RDX|WM,  RY|WR|N,  0,       0 }, // 68 AX_STY
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 69 AX_ADC *
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 6a RE_BNE
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 6b RE_BEQ
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 6c AX_ASL *$ (too many steps)
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 6d
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 6e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 6f AX_DEC *$ (too many steps)
+};
+
+const template_t template7 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 70
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 71 AX_CMP $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 72
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 73
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 74
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 75
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 76 AX_EOR *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 77
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 78 AX_LSR $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 79 AX_ROL $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 7a AX_ROR $
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 7b AX_AND *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 7c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 7d
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 7e AX_ORA *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 7f
+};
+
+// Absolute + Y
+const template_t template8 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 80
+  { F1, F2, FA,       RR|WD,      RDY|WM,  RR|WA|N,  0,       0 }, // 81 AY_LDA
+  { F1, F2, FA,       RR|WD,      RDY|WM,  RA|WR|N,  0,       0 }, // 82 AY_STA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 83
+  { F1, F2, FA,       RR|WD,      RDY|WM,  RR|WX|N,  0,       0 }, // 84 AY_LDX
+  { F1, F2, FA,       RR|WD,      RDY|WM,  RR|WX|N,  0,       0 }, // 85 AY_STX
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 86 AY_SBC *
+  { F1, F2, RA|WY|N,  0,          0,       0,        0,       0 }, // 87 IP_TAY
+  { F1, F2, RY|WA|N,  0,          0,       0,        0,       0 }, // 88 IP_TYA
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 89 AY_ADC *
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 8a RE_BPL $
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // 8b RE_BMI $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 8c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 8d
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 8e
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 8f
+};
+
+const template_t template9 PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 90
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 91 AY_CMP $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 92
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 93
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 94
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 95
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 96 AY_EOR *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 97
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 98
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 99
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 9a
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 9b AY_AND *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 9c
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 9d
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // 9e AY_ORA *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 9f
+};
+
+// Indexed Indirect (X)
+const template_t templateA PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, RA|WB,    RX|WA,      RL|WX,   RB|WA|N,  0,       0 }, // a0 IP_INX *
+  { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WM,    RR|WA|N, 0 }, // a1 IX_LDA
+  { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WM,    RA|WR|N, 0 }, // a2 IX_STA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // a3
+  { F1, F2, RS|WX|N,  0,          0,       0,        0,       0 }, // a4 IP_TSX
+  { F1, F2, RX|WS|N,  0,          0,       0,        0,       0 }, // a5 IP_TXS
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // a6 IX_SBC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // a7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // a8
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // a9 IX_ADC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // aa RE_BVC $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ab RE_BVS $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ac
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ad
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ae
+  { F1, F2, RA|WB,    RX|WA,      RL|WX|AC,RB|WA|N,  0,       0 }  // af IP_DEX *
+};
+
+const template_t templateB PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b0
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b1 IX_CMP $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b2
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b3
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b4
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b5
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // b6 IX_EOR *
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // b7 AB_JCC
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // b8 AB_JNE
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // b9 AB_JPL $
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // ba AB_JVC $
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // bb IX_AND *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // bc
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // bd
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // be IX_ORA *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // bf
+};
+
+// Indirect Indexed (Y)
+const template_t templateC PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, RA|WB,    RY|WA,      RL|WY,   RB|WA|N,  0,       0 }, // c0 IP_INY *
+  { F1, F2, FA,       RR|WM,      RR|WD,   RDY|WM,   RR|WA|N, 0 }, // c1 IY_LDA
+  { F1, F2, FA,       RR|WM,      RR|WD,   RDY|WM,   RA|WR|N, 0 }, // c2 IY_STA
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c3
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c4
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c5
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // c6 IY_SBC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c8
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // c9 IY_ADC *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ca
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // cb
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // cc
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // cd
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ce
+  { F1, F2, RA|WB,    RY|WA,      RL|WY|AC,RB|WA|N,  0,       0 }  // cf IP_DEY *
+};
+
+const template_t templateD PROGMEM = {
+//  0   1   2         3           4        5         6        7
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d0
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d1 IY_CMP $
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d2
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d3
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d4
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d5
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // d6 IY_EOR *
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // b7 AB_JCS
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // b8 AB_JEQ
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // b9 AB_JMI $
+  { F1, F2, N,        0,          0,       0,        0,       0 }, // ba AB_JVS $
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // db IY_AND *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // dc
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // dd
+  { 0,  0,  0,        0,          0,       0,        0,       0 }, // de IY_ORA *
+  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // df
+};
+
 const template_t * templates[] = { &template0, &template1, &template2, &template3,
-                                   &template4, &template5 };
+                                   &template4, &template5, &template6, &template7,
+                                   &template8, &template9, &templateA, &templateB,
+                                   &templateC, &templateD };
 
 // A buffer to hold a group of instruction microcode words that have been
 // built from a template or from the ALU building code.
@@ -522,30 +811,24 @@ uint8_t makeOpcode(uint8_t group, uint8_t instr) {
 }
 
 // Each call to this burns one block of code at group and the other at group+1.
-void burnInstructionGroups(uint8_t group, const char * name, uint8_t groupOptions) {
-    // Note that groupOptions are specific to a whole block of instructions, like
-    // should unaries be generated and where does the B argument come from.  There
-    // are also instructionOptions that are encoded into the high bits of the
-    // aluInstructions entries.  These indicate whether a specific instruction
-    // is binary or unary, sets the status flags, and needs the ALU carry in flag.
-
-    burnInstructionGroup(group,   name, groupOptions);  // Arithmetic
-    burnInstructionGroup(group+1, name, groupOptions);  // Logical
+void burnInstructionGroups(uint8_t group, const char * name) {
+    burnInstructionGroup(group,   name);  // Arithmetic
+    burnInstructionGroup(group+1, name);  // Logical
 }
 
-void burnInstructionGroup(uint8_t group, const char * name, uint8_t groupOptions) {
+void burnInstructionGroup(uint8_t group, const char * name) {
     Serial.print(F("burning "));
     Serial.print(group);
     Serial.print(F(" - "));
     Serial.println(name);
     for (int flags = 0; (flags < NUM_FLAG_COMBOS); flags++) {
-        buildInstructions(group, groupOptions);
+        buildInstructions(group);
         customizeCodeGroup(flags, group);
         burnCodeBuffer(flags, group);
     }
 }
 
-void buildInstructions(uint8_t group, uint8_t groupOptions) {
+void buildInstructions(uint8_t group) {
     // Initialize the code buffer with values for the entries that will not get
     // overwritten by ALU instructions.
     if (group < (sizeof(templates) / sizeof(*templates))) {
@@ -561,86 +844,121 @@ void buildInstructions(uint8_t group, uint8_t groupOptions) {
         }
     }
 
-    // There are currently some non-ALU instructions (like IP_JMPIA) that use ALU
-    // functionality that would conflict with existing ALU instructions.  Skip ALU
-    // instruction generation in this case and just use the microcode from the templates.
-    // These instrutions will likely all be removed when the X/Y/T registers are added.
-    if (groupOptions & ALU_OPT_NONE) return;
+    uint8_t groupBits = makeOpcodeGroupBits(group);
+    uint8_t addrMode = groupBits & ADDR_MODE_MASK;
+    // Skip ALU instruction generation for modes with no two-argument ALU instructions and
+    // just use the microcode from the templates.
+    if ((addrMode == ADDR_MODE_00) || (addrMode == ADDR_MODE_E0)) return;
 
-    // Walk the ALU instruction definitions table and generate the microcode.  There are
-    // two conditions that must be met for a table entry to output microcode:
-
-    //   1. The low order bit of the groupBits is the position of the ALU_M bit that
-    //   indicates an arithmetic or logical instruction.  The table has both types, so
-    //   only generate the set of instructions that match the ALU_M bit for the group.
-
-    //   2. The instruction must use two operands (ALU_IN_BINARY) or the options to
-    //   generate unary instructions for the group (ALU_OPT_UNARY) must be set. This
-    //   prevents multiple instances of the unary ALU instructions for being created when
-    //   generating multiple sets of binary ALU instructions with differing operand
-    //   sources.
+    // Walk the ALU instruction definitions table and generate microcode. The low
+    // order bit of the groupBits is the position of the ALU_M bit that indicates an
+    // arithmetic or logical instruction.  The table has both types, so only generate the
+    // set of instructions that match the ALU_M bit for the group.
 
     // For each ALU instruction in the group being processed, generate a set of steps to
-    // fetch the operand into B (if needed) and then store the ALU result back into A. The
-    // mode and select lines on the ALU chips are wired to the instruction register, so
-    // the only code differences in the instructions are the setting of the ALU CARRY-IN
-    // bit.
-    uint8_t groupBits = makeOpcodeGroupBits(group);
+    // fetch the operand into B and then store the ALU result back into A. The mode and
+    // select lines on the ALU chips are wired to the instruction register, so the only
+    // code differences in the instructions are the setting of the ALU CARRY-IN bit.
     for (unsigned i = 0; (i < (sizeof(aluInstructionDefinitions) / sizeof(*aluInstructionDefinitions))); i++) {
         uint16_t def = aluInstructionDefinitions[i];
         uint8_t opcode = def & OPCODE_MASK;
-        if (((opcode & ALU_M) == (groupBits & ALU_M)) &&
-            ((groupOptions & ALU_OPT_UNARY) || (def & ALU_DEF_BINARY))) {
+        if ((opcode & ALU_M) == (groupBits & ALU_M)) {
             unsigned index = opcode & INSTRUCTION_MASK;
             microcode_t carry = (def & ALU_DEF_CI) ? AC : 0;
+// TODO - need customize code for ADC and SBC to set the carry based on the physical flag.
+//        not yet - need CLC first also inverter on flag output line to match 6502 polarity.
             code[index][5] = code[index][6] = code[index][7] = 0;
             code[index][0] = F1;            // Fetch instruction from memory
             code[index][1] = F2;            // Opcode into IR (sets ALU mode and S bits)
-            if ((def & ALU_DEF_BINARY) == 0) {
-                // Unary operation, no additional operand needed
-                code[index][2] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
-            } else if (groupOptions & ALU_OPT_IMMEDIATE) {
-                // Get B operand from immediate value
-                code[index][2] = RPI | WMA;     // Get next address from PC
-                code[index][3] = RM | WB;       // Read operand into B (immediate data)
-                code[index][4] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
-            } else if (groupOptions & ALU_OPT_ABSOLUTE) {
-                    // Get B operand from specified memory location
-                    code[index][2] = RPI | WMA;     // Get next address from PC
-                    code[index][3] = RM | WMA;      // Read address of operand into MAR
-                    code[index][4] = RM | WB;       // Read operand into B
-                    code[index][5] = RL | carry | WA | LF | N;   // Write ALU result into A and flags
-            } else {
-                Serial.print(F("ALU microcode error, opcode="));
-                Serial.println(opcode);
+            switch (addrMode) {
+            case ADDR_MODE_IM: // Get B operand from immediate value
+                code[index][2] = RPI | WM;          // Get next address from PC
+                code[index][3] = RR | WB;           // Read operand into B (immediate data)
+                code[index][4] = RL|carry|WA|LF|N;  // Write ALU result into A and flags
+                break;
+            case ADDR_MODE_AB: // Get B operand from specified memory location
+                code[index][2] = RPI | WM;          // Get next address from PC
+                code[index][3] = RR | WM;           // Read address of operand into MAR
+                code[index][4] = RR | WB;           // Read operand into B
+                code[index][5] = RL|carry|WA|LF|N;  // Write ALU result into A and flags
+                break;
+            case ADDR_MODE_AX: // Absolute+X
+                code[index][2] = RPI | WM;          // Get next address from PC
+                code[index][3] = RR | WD;           // Read address of operand into D
+                code[index][4] = RDX | WM;          // Read addr+X from adder into MAR
+                code[index][5] = RR | WB;           // Read operand into B
+                code[index][6] = RL|carry|WA|LF|N;  // Write ALU result into A and flags
+                break;
+            case ADDR_MODE_AY: // Absolute+Y
+                code[index][2] = RPI | WM;          // Get next address from PC
+                code[index][3] = RR | WD;           // Read address of operand into D
+                code[index][4] = RDY | WM;          // Read addr+Y from adder into MAR
+                code[index][5] = RR | WB;           // Read operand into B
+                code[index][6] = RL|carry|WA|LF|N;  // Write ALU result into A and flags
+                break;
+            case ADDR_MODE_IX: // Indexed Indirect X
+//              { FA,       RR|WD,      RDX|WM, RR|WM,   RR|WA|N, 0 }, // a1 IX_LDA
+                code[index][2] = RPI | WM;          // Get next address from PC
+                code[index][3] = RR | WD;           // Read address of operand into D
+                code[index][4] = RDX | WM;          // Read addr+X from adder into MAR
+                code[index][5] = RR | WM;           // Read pointer into MAR
+                code[index][6] = RR | WB;           // Read operand into B
+                code[index][7] = RL|carry|WA|LF|N;  // Write ALU result into A and flags
+                break;
+            case ADDR_MODE_IY: // Indirect Indexed Y
+//              { F1, F2, FA,       RR|WM,     RR|WD,   RDY|WM,  RR|WA|N, 0 }, // c1 IY_LDA
+                code[index][2] = RPI | WM;          // Get next address from PC
+                code[index][3] = RR | WM;           // Read pointer into MAR
+                code[index][4] = RR | WD;           // Read address of operand into D
+                code[index][5] = RDY | WM;          // Read addr+Y from adder into MAR
+                code[index][6] = RR | WB;           // Read operand into B
+                code[index][7] = RL|carry|WA|LF|N;  // Write ALU result into A and flags
+                break;
             }
         }
     }
 }
 
-// Modify the microcode for a NOP to convert it to a JMP.
-// Used for all of the conditional jump instrutions.
-void buildJmpInstruction(uint16_t instr) {
-    code[instr][2] = RPI | WMA;
-    code[instr][3] = RM | WP | N;
+// Modify the microcode for a NOP to convert it to an absolute JMP.
+// Used for all of the conditional jump instructions.
+void buildAbJmpInstruction(uint16_t instr) {
+    code[instr][2] = RPI | WM;
+    code[instr][3] = RR | WP | N;
 }
+// Modify the microcode for a NOP to convert it to a relative JMP.
+// Used for all of the conditional branch instructions.
+void buildReJmpInstruction(uint16_t instr) {
+    code[instr][2] = RPI | WM;
+    code[instr][3] = RR | WD;       // offset to adder D
+    code[instr][4] = RX | WB;       // save X
+    code[instr][5] = RP | WX;
+    code[instr][6] = RDX | WP;      // PC + offset (X + D) to PC
+    code[instr][7] = RB | WX | N;   // restore previous X
+}
+
 
 void customizeCodeGroup(uint16_t flags, uint16_t group) {
     for (uint16_t instr = 0; (instr < NUM_INSTRUCTIONS); instr++) {
         uint16_t opcode = makeOpcode(group, instr);
         switch (opcode) {
-        case IM_JZ:
-            if (flags & SF_Z) {
-                // default JZ is a NOP.  Make it a JMP if the Z flag is set.
-                buildJmpInstruction(instr);
-            }
-            break;
-        case IM_JC:
-            if (flags & SF_C) {
-                // default JZ is a NOP.  Make it a JMP if the Z flag is set.
-                buildJmpInstruction(instr);
-            }
-            break;
+        // Default template code for a conditional jmp or branch is a NOP.  Build the
+        // appropriate absolute or relative jmp microcode if the flag condition is met.
+        case AB_JCC: if (!(flags & SF_C)) buildAbJmpInstruction(instr); break;
+        case AB_JNE: if (!(flags & SF_Z)) buildAbJmpInstruction(instr); break;
+        case AB_JPL: if (!(flags & SF_M)) buildAbJmpInstruction(instr); break;
+        case AB_JVC: if (!(flags & SF_V)) buildAbJmpInstruction(instr); break;
+        case AB_JCS: if (flags & SF_C)    buildAbJmpInstruction(instr); break;
+        case AB_JEQ: if (flags & SF_Z)    buildAbJmpInstruction(instr); break;
+        case AB_JMI: if (flags & SF_M)    buildAbJmpInstruction(instr); break;
+        case AB_JVS: if (flags & SF_V)    buildAbJmpInstruction(instr); break;
+        case RE_BCC: if (!(flags & SF_C)) buildReJmpInstruction(instr); break;
+        case RE_BNE: if (!(flags & SF_Z)) buildReJmpInstruction(instr); break;
+        case RE_BPL: if (!(flags & SF_M)) buildReJmpInstruction(instr); break;
+        case RE_BVC: if (!(flags & SF_V)) buildReJmpInstruction(instr); break;
+        case RE_BCS: if (flags & SF_C)    buildReJmpInstruction(instr); break;
+        case RE_BEQ: if (flags & SF_Z)    buildReJmpInstruction(instr); break;
+        case RE_BMI: if (flags & SF_M)    buildReJmpInstruction(instr); break;
+        case RE_BVS: if (flags & SF_V)    buildReJmpInstruction(instr); break;
         default:
             break;
         }
@@ -697,9 +1015,13 @@ void burnMicrocodeRoms() {
     }
 
     // Note that each call to burnAluInstructionGroups burns two groups of instructions.
-    burnInstructionGroups(0, "Immediate", ALU_OPT_IMMEDIATE);
-    burnInstructionGroups(2, "Absolute and unary", ALU_OPT_ABSOLUTE | ALU_OPT_UNARY);
-    burnInstructionGroups(4, "Special", ALU_OPT_NONE);
+    burnInstructionGroups(0x0, "Address Mode 0");
+    burnInstructionGroups(0x2, "Immediate");
+    burnInstructionGroups(0x4, "Absolute");
+    burnInstructionGroups(0x6, "Absolute+X");
+    burnInstructionGroups(0x8, "Absolute+Y");
+    burnInstructionGroups(0xa, "Indexed Indirect (a,x)");
+    burnInstructionGroups(0xc, "Indirect Indexed (a),y");
 #else
     // walking bit test for ROM0 to test control bits
     uint8_t bit = 1;

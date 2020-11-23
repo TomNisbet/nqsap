@@ -30,12 +30,24 @@ docs:
         url: /docs/microcode/
       - title: "Stack Pointer"
         url: /docs/stack-pointer/
+      - title: "DXY Registers"
+        url: /docs/dxy-registers/
   - title: "Wrap-up"
     children:
       - title: "Tips"
         url: /docs/tips/
       - title: "Next Steps"
         url: /docs/next-steps/
+  - title: "Instruction Set"
+    children:
+      - title: "Instruction Summary"
+        url: /docs/in-summary/
+      - title: "Instruction Details"
+        url: /docs/in-details/
+      - title: "Opcode Table"
+        url: /docs/in-by-opcode/
+      - title: "Mode Group Table"
+        url: /docs/in-by-mode-group/
   - title: "References"
     children:
       - title: "74181 ALU Notes"

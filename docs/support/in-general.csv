@@ -1,0 +1,70 @@
+﻿Code,Description,Flags,6502 Support,NQSAP Support,Complete,Notes
+ADC,Add with Carry,CZVN,,,,
+AND,Logical AND,ZN,,,,
+ASL,Arithmetic Shift Left,CZN,,,,c flag
+BCC,Branch if Carry Clear,,,,,
+BCS,Branch if Carry Set,,,,,
+BEQ,Branch if Equal,,,,,
+BIT,Bit Test,Z,,,,vn flags
+BMI,Branch if Minus,,,,n,flags
+BNE,Branch if Not Equal,,,,,
+BPL,Branch if Positive,,,,n,flags
+BRK,Force Interrupt,,,n,,interrupts
+BVC,Branch if Overflow Clear,,,,n,flags
+BVS,Branch if Overflow Set,,,,n,flags
+CLC,Clear Carry,C,,,n,flags
+CLD,Clear Decimal Mode,,,n,,decimal
+CLI,Clear Interrupt Disable,,,n,,interrupts
+CLV,Clear Overflow,V,,,n,flags
+CMP,Compare A,CZVN,,,n,alu
+CPX,Compare X,CZVN,,,n,alu
+CPY,Compare Y,CZVN,,,n,alu
+DEA,Decrement A,ZN,n,,,
+DEC,Decrement Memory,ZN,,,,
+DEX,Decrement X,ZN,,,,
+DEY,Decrement Y,ZN,,,,
+EOR,Exclusive OR,ZN,,,,
+INA,Increment A,ZN,n,,,
+INC,Increment Memory,ZN,,,,
+INX,Increment X,ZN,,,,
+INY,Increment Y,ZN,,,,
+JCC,Jump if Carry Clear,,n,,,
+JCS,Jump if Carry Set,,n,,,
+JEQ,Jump if Equal,,n,,,
+JMI,Jump if Minus,,n,,n,flags
+JMP,Jump,,,,,
+JNE,Jump if Not Equal,,n,,,
+JPL,Jump if Positive,,n,,n,flags
+JVC,Jump if Overflow Clear,,n,,n,flags
+JVS,Jump if Overflow Set,,n,,n,flags
+JSR,Jump to Subroutine,,,,,
+LDA,Load A,,,,,
+LDX,Load X,,,,,
+LDY,Load Y,,,,,
+LSR,Logical Shift Right,CZN,,,n,shift
+NOP,No Operation,,,,,
+NOT,Bitwise NOT A,ZN,n,,,
+OUT,Output A,,n,,,
+ORA,Logical Inclusive OR,ZN,,,,
+PHA,Push A,,,,,
+PHP,Push Processor Status,,,n,n,status
+PLA,Pull A,,,,,
+PLP,Pull Processor Status,,,n,n,status
+ROL,Rotate Left,CZN,,,n,shift
+ROR,Rotate Right,CZN,,,n,shift
+RTI,Return from Interrupt,,,n,,interrupts
+RTS,Return from Subroutine,,,,,
+SBC,Subtract with Carry,CZVN,,,,
+SEC,Set Carry,C,,,,
+SED,Set Decimal Mode,,,n,n,decimal
+SEI,Set interrupt Disable,,,n,n,interrupts
+STA,Store A,,,,,
+STX,Store X,,,,,
+STY,Store Y,,,,,
+TAX,Transfer A to X,,,,,
+TAY,Transfer A to Y,,,,,
+TSX,Transfer SP to X,,,,,
+TXA,Transfer X to A,,,,,
+TXS,Transfer X to SP,,,,,
+TYA,Transfer Y to A,,,,,
+HLT,Halt,,n,,,

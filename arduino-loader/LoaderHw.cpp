@@ -69,18 +69,21 @@ enum {
     REG_ALU = 0x04,
     REG_SP  = 0x05,
     REG_PC =  0x06,
+    REG_D =   0x08,
     REG_MAR = 0x09,
+    REG_X =   0x0a,
+    REG_Y =   0x0b,
     REG_OUT = 0x0c,
     REG_IR =  0x0f
 };
 
 
 static const char * registerNames[] = {
-    "NONE", "MEM", "A",  "B",     "ALU",  "SP", "PC", "07",
-    "08",   "MAR", "0a", "0b",    "OUT", "0d", "0e", "IR"
+    "NONE", "MEM", "A",  "B",   "ALU",  "SP", "PC", "07",
+    "D",    "MAR", "X",  "Y",   "OUT", "0d", "0e", "IR"
 };
 static const unsigned woRegisters[] = { REG_OUT, REG_MAR, REG_IR };
-static const unsigned rwRegisters[] = { REG_A, REG_B, REG_PC, REG_SP };
+static const unsigned rwRegisters[] = { REG_D, REG_X, REG_Y, REG_A, REG_B, REG_PC, REG_SP };
 static unsigned numWoRegisters() { return sizeof(woRegisters) / sizeof(*woRegisters); }
 static unsigned numRwRegisters() { return sizeof(rwRegisters) / sizeof(*rwRegisters); }
 
@@ -147,9 +150,6 @@ bool LoaderHw::isCliMode() {
 
 // Generate one pulse on the host clock
 void LoaderHw::clkPulse() {
-//    Serial.println("CLK");
-//    while (Serial.read() == -1) {}
-
     delayMicroseconds(1);
     digitalWrite(CLK, HIGH);
     delayMicroseconds(1);
@@ -218,13 +218,16 @@ bool LoaderHw::testHardware() {
     unsigned ix;
 
     enable();
-    for (ix = 0; (ix < numWoRegisters()); ix++) {
-        if (!testRegister(woRegisters[ix], false)) {
+    for (ix = 0; (ix < numRwRegisters()); ix++) {
+        writeRegister(REG_IR, 0);  // NOP so no control lines asserted
+        writeRegister(REG_X, 0);   // Have adder return D+0 for D register test
+        if (!testRegister(rwRegisters[ix], true)) {
             return false;
         }
     }
-    for (ix = 0; (ix < numRwRegisters()); ix++) {
-        if (!testRegister(rwRegisters[ix], true)) {
+    for (ix = 0; (ix < numWoRegisters()); ix++) {
+        writeRegister(REG_IR, 0);  // NOP so no control lines asserted
+        if (!testRegister(woRegisters[ix], false)) {
             return false;
         }
     }
@@ -233,7 +236,11 @@ bool LoaderHw::testHardware() {
         return false;
     }
 
-    return testAlu();
+    if (!testAlu()) {
+        return false;
+    }
+
+    return testAdder();
 }
 
 
@@ -258,6 +265,7 @@ bool LoaderHw::burnByte(byte value, uint32_t address) {
     return true;
 }
 
+#if 0
 static const uint8_t patterns[] = {
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
     0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
@@ -265,7 +273,15 @@ static const uint8_t patterns[] = {
     0xff, 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01, 0x00,
     0xaa, 0x55, 0xaa, 0x55, 0xcc, 0x33, 0xcc, 0x33, 0x00
 };
-
+#else
+static const uint8_t patterns[] = {
+    0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+    0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff,
+    0xff, 0xfe, 0xfd, 0xfb, 0xf7, 0xef, 0xdf, 0xbf, 0xff,
+    0xff, 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01, 0x00,
+    0xaa, 0x55, 0xaa, 0x55, 0xcc, 0x33, 0xcc, 0x33, 0x00
+};
+#endif
 bool LoaderHw::testRegister(unsigned reg, bool isRw) {
     Serial.print("Testing ");
     Serial.print(registerNames[reg]);
@@ -387,6 +403,46 @@ uint8_t LoaderHw::localCompute(uint8_t op, uint8_t a, uint8_t b) {
     return 0;
 }
 
+bool LoaderHw::testAdder() {
+    unsigned numPatterns = sizeof(patterns);
+
+    Serial.print(F("Testing DXY adder: "));
+    for (unsigned aIndex = 0; (aIndex < numPatterns); aIndex++) {
+        for (unsigned bIndex = 0; (bIndex < numPatterns); bIndex++) {
+            if (!testAdderOperation(patterns[aIndex], patterns[bIndex])) {
+                return false;
+            }
+        }
+    }
+    Serial.println("pass");
+    return true;
+}
+
+
+bool LoaderHw::testAdderOperation(uint8_t a, uint8_t b) {
+    writeRegister(REG_X, a);
+    writeRegister(REG_D, b);
+    writeRegister(REG_NONE, 0); // don't want the next CLK to write the D register
+    uint8_t readVal = readRegister(REG_D);
+    uint8_t expectedVal = a + b;
+    if (readVal != expectedVal) {
+        char s[60];
+        sprintf(s, "FAILED to add - X=%02x D=%02x, result=%02x, expected=%02x", a, b, readVal, expectedVal);
+        Serial.println(s);
+        return false;
+    }
+
+    // Test that the Adder result can be transfered back to X without corruption
+    transferRegister(REG_X, REG_D);
+    readVal = readRegister(REG_X);
+    if (readVal != expectedVal) {
+        char s[60];
+        sprintf(s, "FAILED to transfer - X=%02x D=%02x, result=%02x, expected=%02x", a, b, readVal, expectedVal);
+        Serial.println(s);
+        return false;
+    }
+    return true;
+}
 
 
 static void selectRegister(uint8_t reg, uint8_t clk) {

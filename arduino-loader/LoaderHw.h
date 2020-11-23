@@ -41,6 +41,8 @@ class LoaderHw
     bool testAluOperation(uint8_t op, const char * opName, uint8_t a, uint8_t b);
     uint8_t aluCompute(uint8_t op, uint8_t a, uint8_t b);
     uint8_t localCompute(uint8_t op, uint8_t a, uint8_t b);
+    bool testAdder();
+    bool testAdderOperation(uint8_t a, uint8_t b);
 
     void selectWriteRegister(uint8_t reg);
     void selectReadRegister(uint8_t reg);

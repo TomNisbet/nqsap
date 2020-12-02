@@ -37,7 +37,6 @@ enum {
     AA_ROR = 0x1a,  // rotate right thru carry
     AB_BIT = 0x1b,  // * bit test A with memory
     IP_PLA = 0x1e,  // pull A
-    IP_HLT = 0x1f,  // halt
 
     // 20 - 2f   Immediate - ALU Arithmetic
     AA_INA = 0x20,  // * increment A
@@ -169,7 +168,25 @@ enum {
     IY_ORA = 0xde,  // * OR A
 };
 
-static const uint8_t program0[] = {
+static const uint8_t pgmChase[] = {
+    // blinky light effect using the Y Register  LEDs as a chaser light.  This illustrates
+    // the AX (absolute+X) addressing mode.
+    IM_LDA, 0,
+// LOOP
+    IM_AND, 0x0f,
+    IP_OUT,
+    IP_TAX,
+    AX_LDY, 0x10,       // Get a value from the bit table and show it on the Y LEDs
+    IP_TXS,             // Give the SP LEDs something to do too
+    AA_INA,
+    AB_JMP, 0x02,       // JMP LOOP
+    IP_NOP, IP_NOP, IP_NOP, IP_NOP,
+    // Table of sixteen values to display a walking bit pattern
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+    0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00
+};
+
+static const uint8_t pgmCount3[] = {
     // Count by 3
     IM_LDA, 10,   // start at 10
 // LOOP
@@ -178,15 +195,7 @@ static const uint8_t program0[] = {
     AB_JMP, 2     // JMP back to LOOP
 };
 
-static const uint8_t program1[] = {
-    // Memory test pattern - not an executable program
-    'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',
-    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-    0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe,
-    0x00, 0xff, 0x55, 0xaa, '0',  '1',  '2',  '3'
-};
-
-static const uint8_t program2[] = {
+static const uint8_t pgmJumpTest[] = {
     IM_LDA, 1,    // start at 1
     AA_DEA,
     AB_JCS, 11,
@@ -194,27 +203,27 @@ static const uint8_t program2[] = {
 // 7
     IM_LDA, 22,
     IP_OUT,
-    IP_HLT,
+    AB_JMP, 0x0a,
 // 11
     IM_LDA, 33,
     IP_OUT,
-    IP_HLT,
+    AB_JMP, 0x0f,
 // 15
     IM_LDA, 44,
     IP_OUT,
-    IP_HLT
+    AB_JMP, 0x13
 };
 
-static const uint8_t program3[] = {
+static const uint8_t pgmStack1[] = {
     IM_LDA, 10,    // Test stack - load value to A and push, change A, pop
     IP_PHA,
     AA_INA,
     AA_INA,
     IP_PLA,
-    IP_HLT
+    AB_JMP, 0x06
 };
 
-static const uint8_t program4[] = {
+static const uint8_t pgmStack2[] = {
     // Count by fives to the output register, but then decrement a few times and display
     // the result before resuming the count.  Demonstrates the JSR/RTS as well as the
     // PHA/PLA stack operations.
@@ -236,40 +245,12 @@ static const uint8_t program4[] = {
     IP_RTS
 };
 
-static const uint8_t program5[] = {
-    IM_LDA, 0x22,
-    AB_STA, 0x50,
-    AA_INA,
-    AB_STA, 0x51,
-    AB_LDA, 0x50,
-    IP_OUT,
-    AB_JMP, 10
-};
-
-static const uint8_t program6[] = {
-    // blinky light effect using the SP LEDs as a chaser light.  Obviously no stack
-    // instructions can be used by this program.  This illustrates the AX addressing mode.
-    // At the time of this writing, the Y register was not fully wired to the adder.  If
-    // it was, the AY addressing mode could have been used instead, saving a few
-    // instructions.  As it is, the X register is the only one that can do indexed address
-    // modes and it is also the only register that can transfer to and from SP.  The other
-    // option would be to use Y in place of SP as the "output" register, but it didn't
-    // have its LEDs wired yet.  DXY is still a work-in-progress.
-    IM_LDA, 0,
-// LOOP
-    IM_AND, 0x0f,
-    IP_TAY,
-    IP_TAX,
-    AX_LDA, 0x10,       // Get a value from the bit table
-    IP_TAX,
-    IP_TXS,             // Show the value on the SP LEDs
-    IP_TYA,
-    AA_INA,
-    AB_JMP, 0x02,       // JMP LOOP
-    IP_NOP, IP_NOP,
-    // Table of sixteen values to display a walking bit pattern
+static const uint8_t pgmPattern[] = {
+    // Memory test pattern - not an executable program
+    'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-    0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00
+    0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe,
+    0x00, 0xff, 0x55, 0xaa, '0',  '1',  '2',  '3'
 };
 
 struct program_t {
@@ -277,13 +258,12 @@ struct program_t {
     size_t          len;
 };
 static const program_t programs[] = {
-    program0, sizeof(program0),
-    program1, sizeof(program1),
-    program2, sizeof(program2),
-    program3, sizeof(program3),
-    program4, sizeof(program4),
-    program5, sizeof(program5),
-    program6, sizeof(program6)
+    pgmChase,       sizeof(pgmChase),
+    pgmCount3,      sizeof(pgmCount3),
+    pgmJumpTest,    sizeof(pgmJumpTest),
+    pgmStack1,      sizeof(pgmStack1),
+    pgmStack2,      sizeof(pgmStack2),
+    pgmPattern,     sizeof(pgmPattern)
 };
 
 
@@ -302,6 +282,7 @@ enum {
     CMD_FILL,
     CMD_INSERT,
     CMD_GET,
+    CMD_NAMES,
     CMD_PUT,
     CMD_READ,
     CMD_QUIT,
@@ -327,9 +308,7 @@ void setup() {
 }
 
 void loop() {
-    if (hw.isCliMode()) {
-        commandLoop();
-    }
+    processCommand();
 }
 
 char waitChar() {
@@ -625,6 +604,7 @@ void burnProgram(unsigned pgmIx, uint32_t start) {
                 return;
             }
         }
+        hw.reset();
         cmdStatus.info("Write verification test successful");
     }
 }
@@ -668,6 +648,15 @@ void insertBytes(char * pCursor)
     cmdStatus.info(" successful");
 }
 
+void printRegisterNames() {
+    for (int num = 0; (num < 16); num++) {
+        Serial.print("  ");
+        Serial.print(num, HEX);
+        Serial.print(" - ");
+        Serial.println(hw.registerName(num));
+    }
+
+}
 
 /*
 G5 - get r5 into $ and print
@@ -696,6 +685,7 @@ byte parseCommand(char c)
         case 'f':  cmd = CMD_FILL;      break;
         case 'g':  cmd = CMD_GET;       break;
         case 'i':  cmd = CMD_INSERT;    break;
+        case 'n':  cmd = CMD_NAMES;     break;
         case 'p':  cmd = CMD_PUT;       break;
         case 'r':  cmd = CMD_READ;      break;
         case 'q':  cmd = CMD_QUIT;      break;
@@ -714,7 +704,7 @@ byte parseCommand(char c)
 }
 
 
-void commandLoop() {
+void processCommand() {
     char line[60];
     char buff[50];
     uint32_t a1, a2, a3;
@@ -778,8 +768,7 @@ void commandLoop() {
 
     case CMD_QUIT:
         hw.disable();
-        Serial.println(F("Loader disabled, control returned to host.  Press ENTER to re-enable loader."));
-        readLine(line, sizeof(line));
+        Serial.println(F("Loader disabled, control returned to host."));
         break;
 
     case CMD_READ:
@@ -818,6 +807,10 @@ void commandLoop() {
         }
         break;
 
+    case CMD_NAMES:
+        printRegisterNames();
+        break;
+
     case CMD_DOLLAR:
         sprintf(buff, "%u (0x%02x)", lastVal, lastVal);
         Serial.println(buff);
@@ -851,6 +844,7 @@ void commandLoop() {
 
         Serial.println(F("\nMisc commands:"));
         Serial.println(F("  T         - Test host hardware"));
+        Serial.println(F("  N         - Print register numbers and names"));
         Serial.println(F("  Zpp ss    - Zap (burn) and verify a 32 byte test pattern"));
         Serial.println(F("  Q         - Quit loader mode and return control to host"));
         break;

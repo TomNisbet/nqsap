@@ -20,9 +20,9 @@ class LoaderHw
     void enable();
     void disable();
     bool isActive() { return mEnabled; }
-    bool isCliMode();
     void clkPulse();
     void reset();
+    const char * registerName(int registerNumber);
     uint8_t readRegister(uint8_t reg);
     void writeRegister(uint8_t reg, uint8_t data);
     void transferRegister(uint8_t wReg, uint8_t rReg);

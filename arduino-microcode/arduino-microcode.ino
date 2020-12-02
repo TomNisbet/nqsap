@@ -165,7 +165,7 @@ void fail() {
 #define SCE  0b00000000000000000000000100000000L  // 01 SP count enable
 
 // ROM0
-#define HLT  0b00000000000000000000000010000000L  // 80 Halt
+#define XX08 0b00000000000000000000000010000000L
 #define IP   0b00000000000000000000000001000000L  // 40 Increment PC
 #define CR   0b00000000000000000000000000100000L  // 20 Clear Ring Counter
 #define AC   0b00000000000000000000000000010000L  // 10 ALU Carry Flag
@@ -214,7 +214,6 @@ enum {
     AA_ROR = 0x1a,  // rotate right thru carry
     AB_BIT = 0x1b,  // * bit test A with memory
     IP_PLA = 0x1e,  // pull A
-    IP_HLT = 0x1f,  // halt
 
     // 20 - 2f   Immediate - ALU Arithmetic
     AA_INA = 0x20,  // * increment A
@@ -486,40 +485,40 @@ const template_t template0 PROGMEM = {
 //  0   1   2         3           4        5         6        7
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 00 IP_NOP
   { F1, F2, RA|WO|N,  0,          0,       0,        0,       0 }, // 01 IP_OUT
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 02
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 03
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 04
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 05
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 06
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 07
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 08
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 09
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 02
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 03
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 04
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 05
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 06
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 07
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 08
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 09
   { F1, F2, SD,       RS|WM,      RR|WP|N, 0,        0,       0 }, // 0a IP_RTS
   { F1, F2, FA,       RR|WM,      RR|WP|N, 0,        0,       0 }, // 0b IN_JMP
   { F1, F2, RL|WA|AC|N, 0,        0,       0,        0,       0 }, // 0c AA_ASL *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0d
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0e
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 0f
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 0d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 0e
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 0f
 };
 
 const template_t template1 PROGMEM = {
 //  0   1   2         3           4        5         6        7
   { F1, F2, RL|WA|N,  0,          0,       0,        0,       0 }, // 10 AA_NOT *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 11
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 12
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 13
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 14
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 15
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 11
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 12
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 13
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 14
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 15
   { F1, F2, RS|WM,    RA|WR|SI|N, 0,       0,        0,       0 }, // 16 IP_PHA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 17 IP_CLC $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 18 AA_LSR $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 19 AA_ROL $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1a AA_ROR $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 17 IP_CLC $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 18 AA_LSR $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 19 AA_ROL $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 1a AA_ROR $
   { F1, F2, FA,       RR|WB,      LF|N,    0,        0,       0 }, // 1b AB_BIT *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 1d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 1c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 1d
   { F1, F2, SD,       RS|WM,      RR|WA|N, 0,        0,       0 }, // 1e IP_PLA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 1f IP_HLT
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 1f
 };
 
 // Immediate
@@ -527,40 +526,40 @@ const template_t template2 PROGMEM = {
 //  0   1   2         3           4        5         6        7
   { F1, F2, RL|WA|N,  0,          0,       0,        0,       0 }, // 20 AA_INA *
   { F1, F2, FA,       RR|WA|N,    0,       0,        0,       0 }, // 21 IM_LDA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 22
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 23
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 22
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 23
   { F1, F2, FA,       RR|WX|N,    0,       0,        0,       0 }, // 24 IM_LDX
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 25
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 25
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 26 IM_SBC *
   { F1, F2, FA,       RR|WY|N,    0,       0,        0,       0 }, // 21 IM_LDY
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 28
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 28
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 29 IM_ADC *
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 2a RE_BCC
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 2b RE_BCS
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2d
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 2e
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 2c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 2d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 2e
   { F1, F2, RL|WA|AC|N, 0,        0,       0,        0,       0 }  // 2f AA_DEA *
 };
 
 const template_t template3 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 30
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 31 IM_CMP $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 32 IM_CPX $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 33 IM_CPY $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 34
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 35
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 30
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 31 IM_CMP $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 32 IM_CPX $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 33 IM_CPY $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 34
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 35
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 36 IM_EOR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 37 IP_SEC $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 38
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 39
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3a
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 37 IP_SEC $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 38
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 39
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 3a
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3b IM_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 3d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 3c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 3d
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 3e IM_ORA *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 3f
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 3f
 };
 
 // Absolute
@@ -569,7 +568,7 @@ const template_t template4 PROGMEM = {
   { F1, F2, FA,       RR|WM,      RA|WB,   RR|WA,    RL|WR,   RB|WA|N }, // 40 AB_INC *
   { F1, F2, FA,       RR|WM,      RR|WA|N, 0,        0,       0 }, // 41 AB_LDA
   { F1, F2, FA,       RR|WM,      RA|WR|N, 0,        0,       0 }, // 42 AB_STA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 43
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 43
   { F1, F2, FA,       RR|WM,      RR|WX|N, 0,        0,       0 }, // 44 AB_LDX
   { F1, F2, FA,       RR|WM,      RX|WR|N, 0,        0,       0 }, // 45 AB_STX
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 46 AB_SBC *
@@ -579,39 +578,51 @@ const template_t template4 PROGMEM = {
   { F1, F2, FA,       RR|WB,      RS|WM,   WR|RP|SI, RB|WP|N, 0 }, // 4a AB_JSR
   { F1, F2, FA,       RR|WP|N,    0,       0,        0,       0 }, // 4b AB_JMP
   { F1, F2, FA,       RA|WB,      RR|WA,   RL|WR|AC, RB|WA|N, 0 }, // 4c AB_ASL *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4d
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 4e
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 4d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 4e
   { F1, F2, FA,       RA|WB,      RR|WA,   RL|WR|AC, RB|WA|N, 0 }  // 4f AB_DEC *
 };
 
 const template_t template5 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 50
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 51 AB_CMP $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 52 AB_CPX $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 53 AB_CPY $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 54
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 55
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 50
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 51 AB_CMP $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 52 AB_CPX $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 53 AB_CPY $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 54
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 55
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 56 AB_EOR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 57 IP_CLV $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 58 AB_LSR $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 59 AB_ROL $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5a AB_ROR $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 57 IP_CLV $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 58 AB_LSR $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 59 AB_ROL $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 5a AB_ROR $
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 5b AB_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 5d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 5c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 5d
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 5e AB_ORA *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 5f
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 5f
 };
 
 // Absolute + X
+// Single byte operations, like INC, DEX, and ASL, don't fit in the number of steps
+// available for Absolute+ modes because they need to save and restore the A register
+// around using it.  Here it is with 9 steps.
 //  { F1, F2, FA,       RR|WD,      RDX|WM,  RA|WB,    RR|WA,   RL|WR,   RB|WA,N }, // 60 AX_INC *
+// One possible solution is to build a new A register as an independent register and have
+// this existing A that is hardwired to the ALU become the sHadow A register (H).  This
+// register can be written independently, but it also writes any time A writes.  So H will
+// have the same value as A unless it is explicitly written.  Any code that writes H needs
+// to manually write it back from A at the end of its microcode.  This takes one fewer
+// step because A already has the value that needs to be restored so there is no need for
+// a save before using H.  Here's the same code with H as a hardware shadow of A.
+//  { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WW,    RL|WR,   RA|WH,N }, // 60 AX_INC *
+// Explore this after the ROL/ROR/LSR are coded to make sure they don't have issues.
 const template_t template6 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 60 AX_INC *$ (too many steps)
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 60 AX_INC *$ (too many steps)
   { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WA|N,  0,       0 }, // 61 AX_LDA
   { F1, F2, FA,       RR|WD,      RDX|WM,  RA|WR|N,  0,       0 }, // 62 AX_STA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 63
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 63
   { F1, F2, RA|WX|N,  0,          0,       0,        0,       0 }, // 64 IP_TAX
   { F1, F2, RX|WA|N,  0,          0,       0,        0,       0 }, // 65 IP_TXA
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 66 AX_SBC *
@@ -620,39 +631,39 @@ const template_t template6 PROGMEM = {
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 69 AX_ADC *
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 6a RE_BNE
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 6b RE_BEQ
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 6c AX_ASL *$ (too many steps)
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 6d
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 6e
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 6f AX_DEC *$ (too many steps)
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 6c AX_ASL *$ (too many steps)
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 6d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 6e
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 6f AX_DEC *$ (too many steps)
 };
 
 const template_t template7 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 70
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 71 AX_CMP $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 72
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 73
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 74
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 75
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 70
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 71 AX_CMP $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 72
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 73
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 74
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 75
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 76 AX_EOR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 77
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 78 AX_LSR $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 79 AX_ROL $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 7a AX_ROR $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 77
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 78 AX_LSR $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 79 AX_ROL $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 7a AX_ROR $
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 7b AX_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 7c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 7d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 7c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 7d
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 7e AX_ORA *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 7f
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 7f
 };
 
 // Absolute + Y
 const template_t template8 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 80
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 80
   { F1, F2, FA,       RR|WD,      RDY|WM,  RR|WA|N,  0,       0 }, // 81 AY_LDA
   { F1, F2, FA,       RR|WD,      RDY|WM,  RA|WR|N,  0,       0 }, // 82 AY_STA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 83
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 83
   { F1, F2, FA,       RR|WD,      RDY|WM,  RR|WX|N,  0,       0 }, // 84 AY_LDX
   { F1, F2, FA,       RR|WD,      RDY|WM,  RR|WX|N,  0,       0 }, // 85 AY_STX
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 86 AY_SBC *
@@ -661,30 +672,30 @@ const template_t template8 PROGMEM = {
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 89 AY_ADC *
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 8a RE_BPL $
   { F1, F2, N,        0,          0,       0,        0,       0 }, // 8b RE_BMI $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 8c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 8d
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 8e
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 8f
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 8c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 8d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 8e
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 8f
 };
 
 const template_t template9 PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 90
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 91 AY_CMP $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 92
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 93
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 94
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 95
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 90
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 91 AY_CMP $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 92
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 93
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 94
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 95
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 96 AY_EOR *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 97
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 98
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 99
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 9a
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 97
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 98
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 99
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 9a
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 9b AY_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 9c
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // 9d
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 9c
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // 9d
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // 9e AY_ORA *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // 9f
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // 9f
 };
 
 // Indexed Indirect (X)
@@ -693,39 +704,39 @@ const template_t templateA PROGMEM = {
   { F1, F2, RA|WB,    RX|WA,      RL|WX,   RB|WA|N,  0,       0 }, // a0 IP_INX *
   { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WM,    RR|WA|N, 0 }, // a1 IX_LDA
   { F1, F2, FA,       RR|WD,      RDX|WM,  RR|WM,    RA|WR|N, 0 }, // a2 IX_STA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // a3
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // a3
   { F1, F2, RS|WX|N,  0,          0,       0,        0,       0 }, // a4 IP_TSX
   { F1, F2, RX|WS|N,  0,          0,       0,        0,       0 }, // a5 IP_TXS
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // a6 IX_SBC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // a7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // a8
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // a7
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // a8
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // a9 IX_ADC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // aa RE_BVC $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ab RE_BVS $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ac
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ad
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ae
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // aa RE_BVC $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // ab RE_BVS $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // ac
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // ad
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // ae
   { F1, F2, RA|WB,    RX|WA,      RL|WX|AC,RB|WA|N,  0,       0 }  // af IP_DEX *
 };
 
 const template_t templateB PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b0
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b1 IX_CMP $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b2
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b3
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b4
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // b5
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // b0
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // b1 IX_CMP $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // b2
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // b3
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // b4
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // b5
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // b6 IX_EOR *
   { F1, F2, N,        0,          0,       0,        0,       0 }, // b7 AB_JCC
   { F1, F2, N,        0,          0,       0,        0,       0 }, // b8 AB_JNE
   { F1, F2, N,        0,          0,       0,        0,       0 }, // b9 AB_JPL $
   { F1, F2, N,        0,          0,       0,        0,       0 }, // ba AB_JVC $
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // bb IX_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // bc
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // bd
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // bc
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // bd
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // be IX_ORA *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // bf
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // bf
 };
 
 // Indirect Indexed (Y)
@@ -734,39 +745,39 @@ const template_t templateC PROGMEM = {
   { F1, F2, RA|WB,    RY|WA,      RL|WY,   RB|WA|N,  0,       0 }, // c0 IP_INY *
   { F1, F2, FA,       RR|WM,      RR|WD,   RDY|WM,   RR|WA|N, 0 }, // c1 IY_LDA
   { F1, F2, FA,       RR|WM,      RR|WD,   RDY|WM,   RA|WR|N, 0 }, // c2 IY_STA
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c3
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c4
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c5
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // c3
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // c4
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // c5
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // c6 IY_SBC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // c8
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // c7
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // c8
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // c9 IY_ADC *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ca
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // cb
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // cc
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // cd
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // ce
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // ca
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // cb
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // cc
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // cd
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // ce
   { F1, F2, RA|WB,    RY|WA,      RL|WY|AC,RB|WA|N,  0,       0 }  // cf IP_DEY *
 };
 
 const template_t templateD PROGMEM = {
 //  0   1   2         3           4        5         6        7
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d0
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d1 IY_CMP $
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d2
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d3
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d4
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // d5
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // d0
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // d1 IY_CMP $
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // d2
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // d3
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // d4
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // d5
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // d6 IY_EOR *
   { F1, F2, N,        0,          0,       0,        0,       0 }, // b7 AB_JCS
   { F1, F2, N,        0,          0,       0,        0,       0 }, // b8 AB_JEQ
   { F1, F2, N,        0,          0,       0,        0,       0 }, // b9 AB_JMI $
   { F1, F2, N,        0,          0,       0,        0,       0 }, // ba AB_JVS $
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // db IY_AND *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // dc
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }, // dd
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // dc
+  { F1, F2, 0,        0,          0,       0,        0,       0 }, // dd
   { 0,  0,  0,        0,          0,       0,        0,       0 }, // de IY_ORA *
-  { F1, F2, HLT,      0,          0,       0,        0,       0 }  // df
+  { F1, F2, 0,        0,          0,       0,        0,       0 }  // df
 };
 
 const template_t * templates[] = { &template0, &template1, &template2, &template3,
@@ -835,11 +846,11 @@ void buildInstructions(uint8_t group) {
         // Initialize the code buffer from a template.
         memcpy_P(code, templates[group], sizeof(code));
     } else {
-        // Initialize the code buffer with a HLT instruction.
+        // Initialize the code buffer with a NOP instruction.
         for (int i = 0; (i < NUM_INSTRUCTIONS); i++) {
             code[i][0] = F1;
             code[i][1] = F2;
-            code[i][2] = HLT;
+            code[i][2] = N,
             code[i][3] = code[i][4] = code[i][5] = code[i][6] = code[i][7] = 0;
         }
     }

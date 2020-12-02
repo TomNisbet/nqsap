@@ -6,7 +6,6 @@
 // USB reserves pins 0..1
 // Data bus is pins 2..9
 enum {
-    CLI = 10,   // INPUT - pull low for Command Line Interface
     PGM = 11,   // OUTPUT - puts the host in PROGRAM mode
     CLK = 12,   // OUTPUT - drives the host CLK line
     RST = 13    // OUTPUT - drives the host RST line
@@ -79,7 +78,7 @@ enum {
 
 
 static const char * registerNames[] = {
-    "NONE", "MEM", "A",  "B",   "ALU",  "SP", "PC", "07",
+    "none", "MEM", "A",  "B",   "ALU", "SP", "PC", "07",
     "D",    "MAR", "X",  "Y",   "OUT", "0d", "0e", "IR"
 };
 static const unsigned woRegisters[] = { REG_OUT, REG_MAR, REG_IR };
@@ -114,8 +113,8 @@ void LoaderHw::begin() {
     PORTC = 0x00;
 
     // External pull-up resistors are present on RST and PGM.  An external pull-down is on
-    // CLK.  This allows the system to function as normal if the arduino is not present.
-    pinMode(CLI, INPUT_PULLUP);
+    // CLK.  This allows the system to function as normal if the arduino is not present,
+    // although without a way to load programs there isn't a lot that the system will do.
     digitalWrite(PGM, HIGH);    // PGM is active LOW
     pinMode(PGM, OUTPUT);
     digitalWrite(RST, HIGH);    // RST is active LOW
@@ -143,11 +142,6 @@ void LoaderHw::enable() {
     }
 }
 
-bool LoaderHw::isCliMode() {
-    //return digitalRead(CLI) == LOW;
-    return true;
-}
-
 // Generate one pulse on the host clock
 void LoaderHw::clkPulse() {
     delayMicroseconds(1);
@@ -160,8 +154,15 @@ void LoaderHw::clkPulse() {
 // Generate one reset pulse to the host
 void LoaderHw::reset() {
     digitalWrite(RST, LOW);
-    delayMicroseconds(1);
+    delayMicroseconds(4);
     digitalWrite(RST, HIGH);
+    delay(1);
+}
+
+// Return a name for a given register number
+const char * LoaderHw::registerName(int registerNumber)
+{
+    return registerNames[registerNumber];
 }
 
 uint8_t LoaderHw::readRegister(uint8_t reg) {
@@ -265,15 +266,6 @@ bool LoaderHw::burnByte(byte value, uint32_t address) {
     return true;
 }
 
-#if 0
-static const uint8_t patterns[] = {
-    0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-    0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01,
-    0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff,
-    0xff, 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01, 0x00,
-    0xaa, 0x55, 0xaa, 0x55, 0xcc, 0x33, 0xcc, 0x33, 0x00
-};
-#else
 static const uint8_t patterns[] = {
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
     0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff,
@@ -281,7 +273,7 @@ static const uint8_t patterns[] = {
     0xff, 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01, 0x00,
     0xaa, 0x55, 0xaa, 0x55, 0xcc, 0x33, 0xcc, 0x33, 0x00
 };
-#endif
+
 bool LoaderHw::testRegister(unsigned reg, bool isRw) {
     Serial.print("Testing ");
     Serial.print(registerNames[reg]);
@@ -383,17 +375,18 @@ uint8_t LoaderHw::aluCompute(uint8_t op, uint8_t a, uint8_t b) {
 }
 
 
-// TODO: some of these are incorrect because of the carry bit.  Either wire control of
-// the carry bit to another (scarce) arduino pin or AND the CLR of the ring counter to the
-// loader enable to ensure that the T cycle is always zero and therefore the carry bit
-// from the microcode ROM will be zero as well.
+// The Loader cannot directly control the carry into the ALU so the Ring Counter's CLR is
+// wired to the Loader's enable to ensure that the T cycle is always zero and therefore
+// the carry bit from the microcode ROM is zero as well. This gives a predictable result
+// for all operations, but the results are not all ideal.
+// For example, DEC A returns DEC A+1, which is simply the value of A.
 uint8_t LoaderHw::localCompute(uint8_t op, uint8_t a, uint8_t b) {
     switch (op) {
-    case ALU_INC: return a;         // Carry bit high
-    case ALU_SUB: return a - b - 1; // Carry bit high
-    case ALU_ADD: return a + b;
-    case ALU_SHL: return a + a;
-    case ALU_DEC: return a - 1;
+    case ALU_INC: return a + 1;
+    case ALU_SUB: return a - b;
+    case ALU_ADD: return a + b + 1; // Carry bit low
+    case ALU_SHL: return a + a + 1; // Carry bit low
+    case ALU_DEC: return a;         // Carry bit low
     case ALU_NOT: return ~a;
     case ALU_XOR: return a ^ b;
     case ALU_B:   return b;
@@ -420,7 +413,11 @@ bool LoaderHw::testAdder() {
 
 
 bool LoaderHw::testAdderOperation(uint8_t a, uint8_t b) {
+    // The Loader cannot switch between X and Y as the adder source but it can be
+    // hard-wired temporarily for testing.  Put the operand in both X and Y so that the
+    // add operation works no matter the selected source.
     writeRegister(REG_X, a);
+    writeRegister(REG_Y, a);
     writeRegister(REG_D, b);
     writeRegister(REG_NONE, 0); // don't want the next CLK to write the D register
     uint8_t readVal = readRegister(REG_D);
@@ -441,6 +438,7 @@ bool LoaderHw::testAdderOperation(uint8_t a, uint8_t b) {
         Serial.println(s);
         return false;
     }
+
     return true;
 }
 

@@ -54,7 +54,6 @@ class SpecificInstructionRecord:
         self.isAlu = row['ALU'].strip().lower() == 'y'
         self.bytes = row['Bytes'].strip()
         self.cycles = row['Cycles'].strip()
-        self.status = row['Status'].strip()
 
     def __str__(self):
         return "{} {} {} {} {} {} {} {}".format(self.instance, self.mode, self.name, self.opcode, self.description, self.isAlu, self.bytes, self.cycles)
@@ -151,7 +150,8 @@ differenceTexts = {
     'alu': "Need to share ALU opcode with the SBC operation.  Redesign in progress to override IR and force ALU into subtract mode",
     'vn flags': "Does not set V and N flags",
     'c flag': "Does not set C flag.  Will be fixed in flags redesign",
-    'shift': "Requires new A register hardware"
+    'shift': "Requires new A register hardware",
+    'zn': "Zero and Negative flags not yet set for non-ALU instructions"
 }
 
 class NotesBuilder:
@@ -408,6 +408,7 @@ with open(generalFile, 'rb') as inFile:
         instructions[gi.name] = gi
 
 #
+wip = 0
 with open(specificFile, 'rb') as inFile:
     fixBom(inFile)
     reader = csv.DictReader(inFile)
@@ -422,6 +423,8 @@ with open(specificFile, 'rb') as inFile:
             instructions[si.name].modes.append(si.mode)
         else:
             print "No general instruction for specific", si
+        if si.cycles == 'x':
+            wip += 1
 
 for name in sorted(instructions):
     gi = instructions[name]
@@ -441,3 +444,4 @@ makeInstructionSummaries('../_docs/in-10-summary.md')
 makeInstructionDetails('../_docs/in-20-details.md')
 makeInstructionsByOpcode('../_docs/in-30-by-opcode.md')
 makeInstructionsByModeGroup('../_docs/in-40-by-mode-group.md')
+print "opcodes={}: implemented={}, wip={}".format(len(opcodes), len(opcodes) - wip, wip)

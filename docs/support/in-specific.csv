@@ -1,120 +1,119 @@
-﻿Instance,Opcode,Description,ALU,Bytes,Cycles,Status
-IP_NOP,0x00,no operation,n,1,2,
-IP_OUT,0x01,output A,n,1,3,
-IP_RTS,0x0a,return from subroutine,n,1,5,
-IN_JMP,0x0b,jump,n,2,5,
-AA_ASL,0x0c,arithmetic shift left A,y,1,3,
-AA_NOT,0x10,NOT A,y,1,3,
-IP_PHA,0x16,push A,n,1,4,
-IP_CLC,0x17,clear carry flag,n,1,x,
-AA_LSR,0x18,logical shift left,y,1,x,
-AA_ROL,0x19,rotate left thru carry,n,1,x,
-AA_ROR,0x1a,rotate right thru carry,n,1,x,
-AB_BIT,0x1b,bit test A with memory,y,2,5,
-IP_PLA,0x1e,pull A,n,1,5,
-IP_HLT,0x1f,halt,n,1,3,
-AA_INA,0x20,increment A,y,1,3,
-IM_LDA,0x21,load immediate to A,n,2,4,
-IM_LDX,0x24,load immediate to X,n,2,4,
-IM_SBC,0x26,subtract with carry,y,2,5,
-IM_LDY,0x27,load immediate to Y,n,2,4,
-IM_ADC,0x29,add with carry A,y,2,5,
-RE_BCC,0x2a,branch on carry clear,n,2,8,
-RE_BCS,0x2b,branch on carry set,n,2,8,
-AA_DEA,0x2f,decrement A,y,1,3,
-IM_CMP,0x31,compare A immediate,n,2,x,
-IM_CPX,0x32,compare X immediate,n,2,x,
-IM_CPY,0x33,compare Y immediate,n,2,x,
-IM_EOR,0x36,XOR A,y,2,5,
-IP_SEC,0x37,set carry flag,n,1,x,
-IM_AND,0x3b,AND A,y,2,5,
-IM_ORA,0x3e,OR A,y,2,5,
-AB_INC,0x40,increment memory,y,2,8,
-AB_LDA,0x41,load A from memory,n,2,5,
-AB_STA,0x42,store A to memory,n,2,5,
-AB_LDX,0x44,load X,n,2,5,
-AB_STX,0x45,store X,n,2,5,
-AB_SBC,0x46,subtract with carry memory,y,2,6,
-AB_LDY,0x47,load Y,n,2,5,
-AB_STY,0x48,store Y,n,2,5,
-AB_ADC,0x49,add with carry memory,y,2,6,
-AB_JSR,0x4a,jump to subroutine,n,2,7,
-AB_JMP,0x4b,jump,n,2,4,
-AB_ASL,0x4c,arithmetic shift left memory,y,1,7,
-AB_DEC,0x4f,decrement memory,y,2,7,
-AB_CMP,0x51,compare A,n,2,x,
-AB_CPX,0x52,compare X,n,2,x,
-AB_CPY,0x53,compare Y,n,2,x,
-AB_EOR,0x56,exlcusive OR A,y,2,6,
-IP_CLV,0x57,clear overflow flag,n,1,x,
-AB_LSR,0x58,logical shift right memory,n,2,x,
-AB_ROL,0x59,rotate left thru carry memory,n,2,x,
-AB_ROR,0x5a,rotate right thru carry memory,n,2,x,
-AB_AND,0x5b,AND A,y,2,6,
-AB_ORA,0x5e,OR A,y,2,6,
-AX_INC,0x60,increment memory,y,2,x,
-AX_LDA,0x61,load A from memory,n,2,6,
-AX_STA,0x62,store A to memory,n,2,6,
-IP_TAX,0x64,transfer A to X,n,1,3,
-IP_TXA,0x65,transfer X to A,n,1,3,
-AX_SBC,0x66,subtract with carry memory,y,2,7,
-AX_LDY,0x67,load Y,n,2,6,
-AX_STY,0x68,store Y,n,2,6,
-AX_ADC,0x69,add with carry memory,y,2,7,
-RE_BNE,0x6a,branch if not equal (zero clear),n,2,8,
-RE_BEQ,0x6b,branch if equal (zero set),n,2,8,
-AX_ASL,0x6c,arithmetic shift left memory,y,1,x,
-AX_DEC,0x6f,decrement memory,y,1,x,
-AX_CMP,0x71,compare A,n,2,x,
-AX_EOR,0x76,exlcusive OR A,y,2,7,
-AX_LSR,0x78,logical shift right memory,n,2,x,
-AX_ROL,0x79,rotate left thru carry memory,n,2,x,
-AX_ROR,0x7a,rotate right thru carry memory,n,2,x,
-AX_AND,0x7b,AND A,y,2,7,
-AX_ORA,0x7e,OR A,y,2,7,
-AY_LDA,0x81,load A from memory,n,2,6,
-AY_STA,0x82,store A to memory,n,2,6,
-AY_LDX,0x84,load X,n,2,6,
-AY_STX,0x85,store X,n,2,6,
-AY_SBC,0x86,subtract with carry memory,y,2,7,
-IP_TAY,0x87,transfer A to Y,n,1,3,
-IP_TYA,0x88,transfer Y to A,n,1,3,
-AY_ADC,0x89,add with carry memory,y,2,7,
-RE_BPL,0x8a,branch if plus (minus clear),n,2,8,
-RE_BMI,0x8b,branch if minus (minus set),n,2,8,
-AY_CMP,0x91,compare A,n,2,x,
-AY_EOR,0x96,exlcusive OR A,y,2,7,
-AY_AND,0x9b,AND A,y,2,7,
-AY_ORA,0x9e,OR A,y,2,7,
-IP_INX,0xa0,increment X,y,1,6,
-IX_LDA,0xa1,load A from memory,n,2,7,
-IX_STA,0xa2,store A to memory,n,2,7,
-IP_TSX,0xa4,transfer SP to X,n,1,3,
-IP_TXS,0xa5,transfer X to SP,n,1,3,
-IX_SBC,0xa6,subtract with carry memory,y,2,8,
-IX_ADC,0xa9,add with carry memory,y,2,8,
-RE_BVC,0xaa,branch if overflow clear,n,2,8,
-RE_BVS,0xab,branch if overflow set,n,2,8,
-IP_DEX,0xaf,decrement X,y,1,6,
-IX_CMP,0xb1,compare A,n,2,x,
-IX_EOR,0xb6,exlcusive OR A,y,2,8,
-AB_JCC,0xb7,jump if carry clear,n,2,4,
-AB_JNE,0xb8,jump if not equal (zero clear),n,2,4,
-AB_JPL,0xb9,jump if plus (minus clear),n,2,4,
-AB_JVC,0xba,jump if overflow clear,n,2,4,
-IX_AND,0xbb,AND A,y,2,8,
-IX_ORA,0xbe,OR A,y,2,8,
-IP_INY,0xc0,increment Y,y,1,6,
-IY_LDA,0xc1,load A from memory,n,2,7,
-IY_STA,0xc2,store A to memory,n,2,7,
-IY_SBC,0xc6,subtract with carry memory,y,2,8,
-IY_ADC,0xc9,add with carry memory,y,2,8,
-IP_DEY,0xcf,decrement Y,y,1,6,
-IY_CMP,0xd1,compare A,n,2,x,
-IY_EOR,0xd6,exlcusive OR A,y,2,8,
-AB_JCS,0xd7,jump if carry set,n,2,4,
-AB_JEQ,0xd8,jump if equal (zero set),n,2,4,
-AB_JMI,0xd9,jump if minus (minus set),n,2,4,
-AB_JVS,0xda,jump if overflow set,n,2,4,
-IY_AND,0xdb,AND A,y,2,8,
-IY_ORA,0xde,OR A,y,2,8,
+﻿Instance,Opcode,Description,ALU,Bytes,Cycles
+IP_NOP,0x00,no operation,n,1,2
+IP_OUT,0x01,output A,n,1,3
+IP_RTS,0x0a,return from subroutine,n,1,5
+IN_JMP,0x0b,jump,n,2,5
+AA_ASL,0x0c,arithmetic shift left A,y,1,3
+AA_NOT,0x10,NOT A,y,1,3
+IP_PHA,0x16,push A,n,1,4
+IP_CLC,0x17,clear carry flag,n,1,x
+AA_LSR,0x18,logical shift left,y,1,x
+AA_ROL,0x19,rotate left thru carry,n,1,x
+AA_ROR,0x1a,rotate right thru carry,n,1,x
+AB_BIT,0x1b,bit test A with memory,y,2,5
+IP_PLA,0x1e,pull A,n,1,5
+AA_INA,0x20,increment A,y,1,3
+IM_LDA,0x21,load immediate to A,n,2,4
+IM_LDX,0x24,load immediate to X,n,2,4
+IM_SBC,0x26,subtract with carry,y,2,5
+IM_LDY,0x27,load immediate to Y,n,2,4
+IM_ADC,0x29,add with carry A,y,2,5
+RE_BCC,0x2a,branch on carry clear,n,2,8
+RE_BCS,0x2b,branch on carry set,n,2,8
+AA_DEA,0x2f,decrement A,y,1,3
+IM_CMP,0x31,compare A immediate,n,2,x
+IM_CPX,0x32,compare X immediate,n,2,x
+IM_CPY,0x33,compare Y immediate,n,2,x
+IM_EOR,0x36,XOR A,y,2,5
+IP_SEC,0x37,set carry flag,n,1,x
+IM_AND,0x3b,AND A,y,2,5
+IM_ORA,0x3e,OR A,y,2,5
+AB_INC,0x40,increment memory,y,2,8
+AB_LDA,0x41,load A from memory,n,2,5
+AB_STA,0x42,store A to memory,n,2,5
+AB_LDX,0x44,load X,n,2,5
+AB_STX,0x45,store X,n,2,5
+AB_SBC,0x46,subtract with carry memory,y,2,6
+AB_LDY,0x47,load Y,n,2,5
+AB_STY,0x48,store Y,n,2,5
+AB_ADC,0x49,add with carry memory,y,2,6
+AB_JSR,0x4a,jump to subroutine,n,2,7
+AB_JMP,0x4b,jump,n,2,4
+AB_ASL,0x4c,arithmetic shift left memory,y,1,7
+AB_DEC,0x4f,decrement memory,y,2,7
+AB_CMP,0x51,compare A,n,2,x
+AB_CPX,0x52,compare X,n,2,x
+AB_CPY,0x53,compare Y,n,2,x
+AB_EOR,0x56,exlcusive OR A,y,2,6
+IP_CLV,0x57,clear overflow flag,n,1,x
+AB_LSR,0x58,logical shift right memory,n,2,x
+AB_ROL,0x59,rotate left thru carry memory,n,2,x
+AB_ROR,0x5a,rotate right thru carry memory,n,2,x
+AB_AND,0x5b,AND A,y,2,6
+AB_ORA,0x5e,OR A,y,2,6
+AX_INC,0x60,increment memory,y,2,x
+AX_LDA,0x61,load A from memory,n,2,6
+AX_STA,0x62,store A to memory,n,2,6
+IP_TAX,0x64,transfer A to X,n,1,3
+IP_TXA,0x65,transfer X to A,n,1,3
+AX_SBC,0x66,subtract with carry memory,y,2,7
+AX_LDY,0x67,load Y,n,2,6
+AX_STY,0x68,store Y,n,2,6
+AX_ADC,0x69,add with carry memory,y,2,7
+RE_BNE,0x6a,branch if not equal (zero clear),n,2,8
+RE_BEQ,0x6b,branch if equal (zero set),n,2,8
+AX_ASL,0x6c,arithmetic shift left memory,y,1,x
+AX_DEC,0x6f,decrement memory,y,1,x
+AX_CMP,0x71,compare A,n,2,x
+AX_EOR,0x76,exlcusive OR A,y,2,7
+AX_LSR,0x78,logical shift right memory,n,2,x
+AX_ROL,0x79,rotate left thru carry memory,n,2,x
+AX_ROR,0x7a,rotate right thru carry memory,n,2,x
+AX_AND,0x7b,AND A,y,2,7
+AX_ORA,0x7e,OR A,y,2,7
+AY_LDA,0x81,load A from memory,n,2,6
+AY_STA,0x82,store A to memory,n,2,6
+AY_LDX,0x84,load X,n,2,6
+AY_STX,0x85,store X,n,2,6
+AY_SBC,0x86,subtract with carry memory,y,2,7
+IP_TAY,0x87,transfer A to Y,n,1,3
+IP_TYA,0x88,transfer Y to A,n,1,3
+AY_ADC,0x89,add with carry memory,y,2,7
+RE_BPL,0x8a,branch if plus (minus clear),n,2,8
+RE_BMI,0x8b,branch if minus (minus set),n,2,8
+AY_CMP,0x91,compare A,n,2,x
+AY_EOR,0x96,exlcusive OR A,y,2,7
+AY_AND,0x9b,AND A,y,2,7
+AY_ORA,0x9e,OR A,y,2,7
+IP_INX,0xa0,increment X,y,1,6
+IX_LDA,0xa1,load A from memory,n,2,7
+IX_STA,0xa2,store A to memory,n,2,7
+IP_TSX,0xa4,transfer SP to X,n,1,3
+IP_TXS,0xa5,transfer X to SP,n,1,3
+IX_SBC,0xa6,subtract with carry memory,y,2,8
+IX_ADC,0xa9,add with carry memory,y,2,8
+RE_BVC,0xaa,branch if overflow clear,n,2,8
+RE_BVS,0xab,branch if overflow set,n,2,8
+IP_DEX,0xaf,decrement X,y,1,6
+IX_CMP,0xb1,compare A,n,2,x
+IX_EOR,0xb6,exlcusive OR A,y,2,8
+AB_JCC,0xb7,jump if carry clear,n,2,4
+AB_JNE,0xb8,jump if not equal (zero clear),n,2,4
+AB_JPL,0xb9,jump if plus (minus clear),n,2,4
+AB_JVC,0xba,jump if overflow clear,n,2,4
+IX_AND,0xbb,AND A,y,2,8
+IX_ORA,0xbe,OR A,y,2,8
+IP_INY,0xc0,increment Y,y,1,6
+IY_LDA,0xc1,load A from memory,n,2,7
+IY_STA,0xc2,store A to memory,n,2,7
+IY_SBC,0xc6,subtract with carry memory,y,2,8
+IY_ADC,0xc9,add with carry memory,y,2,8
+IP_DEY,0xcf,decrement Y,y,1,6
+IY_CMP,0xd1,compare A,n,2,x
+IY_EOR,0xd6,exlcusive OR A,y,2,8
+AB_JCS,0xd7,jump if carry set,n,2,4
+AB_JEQ,0xd8,jump if equal (zero set),n,2,4
+AB_JMI,0xd9,jump if minus (minus set),n,2,4
+AB_JVS,0xda,jump if overflow set,n,2,4
+IY_AND,0xdb,AND A,y,2,8
+IY_ORA,0xde,OR A,y,2,8

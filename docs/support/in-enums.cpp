@@ -17,7 +17,6 @@ enum {
     AA_ROR = 0x1a,  // rotate right thru carry
     AB_BIT = 0x1b,  // * bit test A with memory
     IP_PLA = 0x1e,  // pull A
-    IP_HLT = 0x1f,  // halt
 
     // 20 - 2f   Immediate - ALU Arithmetic
     AA_INA = 0x20,  // * increment A

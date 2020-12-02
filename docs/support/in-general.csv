@@ -1,70 +1,69 @@
-﻿Code,Description,Flags,6502 Support,NQSAP Support,Complete,Notes
-ADC,Add with Carry,CZVN,,,,
-AND,Logical AND,ZN,,,,
-ASL,Arithmetic Shift Left,CZN,,,,c flag
-BCC,Branch if Carry Clear,,,,,
-BCS,Branch if Carry Set,,,,,
-BEQ,Branch if Equal,,,,,
-BIT,Bit Test,Z,,,,vn flags
-BMI,Branch if Minus,,,,n,flags
-BNE,Branch if Not Equal,,,,,
-BPL,Branch if Positive,,,,n,flags
-BRK,Force Interrupt,,,n,,interrupts
-BVC,Branch if Overflow Clear,,,,n,flags
-BVS,Branch if Overflow Set,,,,n,flags
-CLC,Clear Carry,C,,,n,flags
-CLD,Clear Decimal Mode,,,n,,decimal
-CLI,Clear Interrupt Disable,,,n,,interrupts
-CLV,Clear Overflow,V,,,n,flags
-CMP,Compare A,CZVN,,,n,alu
-CPX,Compare X,CZVN,,,n,alu
-CPY,Compare Y,CZVN,,,n,alu
-DEA,Decrement A,ZN,n,,,
-DEC,Decrement Memory,ZN,,,,
-DEX,Decrement X,ZN,,,,
-DEY,Decrement Y,ZN,,,,
-EOR,Exclusive OR,ZN,,,,
-INA,Increment A,ZN,n,,,
-INC,Increment Memory,ZN,,,,
-INX,Increment X,ZN,,,,
-INY,Increment Y,ZN,,,,
-JCC,Jump if Carry Clear,,n,,,
-JCS,Jump if Carry Set,,n,,,
-JEQ,Jump if Equal,,n,,,
-JMI,Jump if Minus,,n,,n,flags
-JMP,Jump,,,,,
-JNE,Jump if Not Equal,,n,,,
-JPL,Jump if Positive,,n,,n,flags
-JVC,Jump if Overflow Clear,,n,,n,flags
-JVS,Jump if Overflow Set,,n,,n,flags
-JSR,Jump to Subroutine,,,,,
-LDA,Load A,,,,,
-LDX,Load X,,,,,
-LDY,Load Y,,,,,
-LSR,Logical Shift Right,CZN,,,n,shift
-NOP,No Operation,,,,,
-NOT,Bitwise NOT A,ZN,n,,,
-OUT,Output A,,n,,,
-ORA,Logical Inclusive OR,ZN,,,,
-PHA,Push A,,,,,
-PHP,Push Processor Status,,,n,n,status
-PLA,Pull A,,,,,
-PLP,Pull Processor Status,,,n,n,status
-ROL,Rotate Left,CZN,,,n,shift
-ROR,Rotate Right,CZN,,,n,shift
-RTI,Return from Interrupt,,,n,,interrupts
-RTS,Return from Subroutine,,,,,
-SBC,Subtract with Carry,CZVN,,,,
-SEC,Set Carry,C,,,,
-SED,Set Decimal Mode,,,n,n,decimal
-SEI,Set interrupt Disable,,,n,n,interrupts
-STA,Store A,,,,,
-STX,Store X,,,,,
-STY,Store Y,,,,,
-TAX,Transfer A to X,,,,,
-TAY,Transfer A to Y,,,,,
-TSX,Transfer SP to X,,,,,
-TXA,Transfer X to A,,,,,
-TXS,Transfer X to SP,,,,,
-TYA,Transfer Y to A,,,,,
-HLT,Halt,,n,,,
+﻿Code,Description,Flags,6502 Support,NQSAP Support,Complete,Notes,Text
+ADC,Add with Carry,CZVN,y,y,,,Add the accumulator and the carry flag to memory.  The result is placed in the accumulator.
+AND,Logical AND,ZN,y,y,,,Logical AND the accumulator and memory.  The result is placed in the accumulator.
+ASL,Arithmetic Shift Left,CZN,y,y,,c flag,Arithmetic shift memory or accumulator one bit left.  The MSB is shifted into carry and zero is shifted into the LSB.
+BCC,Branch if Carry Clear,,y,y,,,Branch if the carry flag is clear.
+BCS,Branch if Carry Set,,y,y,,,Branch if the carry flag is set.
+BEQ,Branch if Equal,,y,y,,,Branch if the result is equal to zero (zero flag is set).
+BIT,Bit Test,Z,y,y,,vn flags,"Logical AND the accumulator and memory.  The result is not stored, but the zero flag is set if the result is zero."
+BMI,Branch if Minus,,y,y,n,flags,Branch if the result is less than zero (negative flag is set).
+BNE,Branch if Not Equal,,y,y,,,Branch if the result is not equal to zero (zero flag is clear).
+BPL,Branch if Positive,,y,y,n,flags,Branch if the result is not less than zero (negative flag is clear).
+BRK,Force Interrupt,,y,n,,interrupts,
+BVC,Branch if Overflow Clear,,y,y,n,flags,Branch if the overflow flag is clear.
+BVS,Branch if Overflow Set,,y,y,n,flags,Branch if the overflow flag is set.
+CLC,Clear Carry,C,y,y,n,flags,Clear the carry flag.
+CLD,Clear Decimal Mode,,y,n,,decimal,
+CLI,Clear Interrupt Disable,,y,n,,interrupts,
+CLV,Clear Overflow,V,y,y,n,flags,Clear the overflow flag.
+CMP,Compare A,CZN,y,y,n,alu,Subtract memory from the accumulator and update the flags.  The result of the subtraction is not stored.
+CPX,Compare X,CZN,y,y,n,alu,Subtract memory from X and update the flags.  The result of the subtraction is not stored.
+CPY,Compare Y,CZN,y,y,n,alu,Subtract memory from X and update the flags.  The result of the subtraction is not stored.
+DEA,Decrement A,ZN,n,y,,,Subtract one from the accumulator and store the result in the accumulator.
+DEC,Decrement Memory,ZN,y,y,,,Subtract one from memory and store the result in  memory.
+DEX,Decrement X,ZN,y,y,,,Subtract one from X and store the result in X.
+DEY,Decrement Y,ZN,y,y,,,Subtract one from Y and store the result in Y.
+EOR,Exclusive OR,ZN,y,y,,,Logical exclusive-OR the accumulator and memory.  The result is placed in the accumulator.
+INA,Increment A,ZN,n,y,,,Add one to the accumulator and store the result in the accumulator.
+INC,Increment Memory,ZN,y,y,,,Add one to memory and store the result in  memory.
+INX,Increment X,ZN,y,y,,,Add one to  X and store the result in X.
+INY,Increment Y,ZN,y,y,,,Add one to Y and store the result in Y.
+JCC,Jump if Carry Clear,,n,y,,,Branch if the carry flag is clear.
+JCS,Jump if Carry Set,,n,y,,,Branch if the carry flag is set.
+JEQ,Jump if Equal,,n,y,,,Branch if the result is equal to zero (zero flag is set).
+JMI,Jump if Minus,,n,y,n,flags,Branch if the result is less than zero (negative flag is set).
+JMP,Jump,,y,y,,,Unconditional jump to absolute or relative address.
+JNE,Jump if Not Equal,,n,y,,,Branch if the result is not equal to zero (zero flag is clear).
+JPL,Jump if Positive,,n,y,n,flags,Branch if the result is not less than zero (negative flag is clear).
+JSR,Jump to Subroutine,,y,y,,,Push the address of the next instruction to the stack and jump to a new location.  SP is decremented.
+JVC,Jump if Overflow Clear,,n,y,n,flags,Branch if the overflow flag is clear.
+JVS,Jump if Overflow Set,,n,y,n,flags,Branch if the overflow flag is set.
+LDA,Load A,ZN,y,y,,zn,Load A from memory.
+LDX,Load X,ZN,y,y,,zn,Load X from memory.
+LDY,Load Y,ZN,y,y,,zn,Load Y from memory.
+LSR,Logical Shift Right,CZN,y,y,n,shift,Logical shift memory or accumulator one bit right.  The LSB is shifted into carry and zero is shifted into the MSB.  The negative bit is cleared.
+NOP,No Operation,,y,y,,,No operation is performed.  Registers (except the PC) and flags are unchanged.
+NOT,Bitwise NOT A,ZN,n,y,,zn,All bits of the accumulator are inverted and stored back to the accumulator.
+ORA,Logical Inclusive OR,ZN,y,y,,,Logical inclusive-OR the accumulator and memory.  The result is placed in the accumulator.
+OUT,Output A,,n,y,,,Transfer the accumulator to the output register to display its value.
+PHA,Push A,,y,y,,,Push accumulator on to the stack.  SP is decremented.
+PHP,Push Processor Status,,y,n,n,status,
+PLA,Pull A,ZN,y,y,,zn,Pull accumulator from the stack.  SP is incremented.
+PLP,Pull Processor Status,,y,n,n,status,
+ROL,Rotate Left,CZN,y,y,n,shift,Rotate memory or accumulator on bit left.  The carry flag is shifted into the LSB and the MSB is shifted into the carry flag.
+ROR,Rotate Right,CZN,y,y,n,shift,Rotate memory or accumulator on bit right.  The carry flag is shifted into the MSB and the LSB is shifted into the carry flag.
+RTI,Return from Interrupt,,y,n,,interrupts,
+RTS,Return from Subroutine,,y,y,,,Pull a return address from the stack and jump to it.  SP is incremented.
+SBC,Subtract with Carry,CZVN,y,y,,,Subtract memory from the accumulator with borrow.  If the carry flag is clear (borrow) then the operation is A=A-M-1.  If the carry flag is set (no borrow) then the operation is A=A-M.  The result is stored in the accumulator.
+SEC,Set Carry,C,y,y,,,Set the carry flag.
+SED,Set Decimal Mode,,y,n,n,decimal,
+SEI,Set interrupt Disable,,y,n,n,interrupts,
+STA,Store A,,y,y,,,Store accumulator to memory.  No flags are changed.
+STX,Store X,,y,y,,,Store X to memory.  No flags are changed.
+STY,Store Y,,y,y,,,Store Y to memory.  No flags are changed.
+TAX,Transfer A to X,ZN,y,y,,zn,Transfer accumulator to X and update the N and Z flags with from the transferred value.
+TAY,Transfer A to Y,ZN,y,y,,zn,Transfer accumulator to Y and update the N and Z flags with from the transferred value.
+TSX,Transfer SP to X,ZN,y,y,,zn,Transfer SP to X and update the N and Z flags with from the transferred value.
+TXA,Transfer X to A,ZN,y,y,,zn,Transfer X to accummulator and update the N and Z flags with from the transferred value.
+TXS,Transfer X to SP,,y,y,,,Transfer X to accummulator and update the N and Z flags with from the transferred value.
+TYA,Transfer Y to A,ZN,y,y,,zn,Transfer Y to accummulator and update the N and Z flags with from the transferred value.

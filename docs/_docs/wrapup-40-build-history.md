@@ -4,8 +4,6 @@ permalink: /docs/build-history/
 excerpt: "NQSAP computer build history (blog)"
 ---
 
-[![empty-space](../../assets/images/empty-space.jpg "lots of empty space left"){:width="720px"}](../../assets/images/empty-space.jpg)
-
 ## Apr 2020 - Initial build
 
 I saw the Ben Eater videos in April and immediately started ordering breadboards and LEDs.
@@ -15,8 +13,8 @@ Other than the ALU chips, most of the other 74LS parts were already on-hand.
 
 [![Initial build](../../assets/images/registers-1.jpg "initial NQSAP build"){:width="400px"}](../../assets/images/registers-1.jpg)
 
-The first picture of the NQSAP shows the [system clock]("../clock/"),
-[A/B registers]("../registers/"), and the [ALU]("../alu/").  The bus was built and
+The first picture of the NQSAP shows the [system clock](../clock/),
+[A/B registers](../registers/), and the [ALU](../alu/).  The bus was built and
 integrated much earlier in the build than the Ben Eater process and this helped with test
 and debug.
 
@@ -24,9 +22,11 @@ Also pictured is a [data test board](../getting-started/#data-test-board) that a
 value from DIP switches to be placed on the bus.  A button was later added to replace the
 jumper wire that enabled bus output.
 
+### RAM and MAR
+
 [![RAM and MAR](../../assets/images/ram-mar.jpg "RAM and Memory Address Register"){:width="400px"}](../../assets/images/ram-mar.jpg)
 
-The next iteration added the [Memory Address Register (MAR) and the RAM]("../ram/").  The MAR is
+The next iteration added the [Memory Address Register (MAR) and the RAM](../ram/).  The MAR is
 read-only, using a pair of 74LS173 registers.  The RAM uses a 32Kx8 static RAM which is
 extreme overkill, since only 256 of the 32768 bytes are used.  But it is extremely easy to
 wire because it does not require a separate bus driver.
@@ -35,9 +35,11 @@ The RAM was verified by using the data test board to load values into the MAR an
 into the RAM.  The RAM values could then be read back by enabling RAM output and using the
 bus LEDs.
 
+### PC, IR, and Loader
+
 [![PC, IR, and Loader](../../assets/images/pc-ir-loader.jpg "Program Counter, Instruction Register and Loader"){:width="400px"}](../../assets/images/pc-ir-loader.jpg)
 
-The Program Counter, Instruction Register, and [Loader]("../loader/") were added next.  As
+The Program Counter, Instruction Register, and [Loader](../loader/) were added next.  As
 with other parts of the build, initial assembly used jumper wires and ribbon cables to
 prove out the design before committing to cutting and placing the permanent interconnect
 wires.  Parts of the ALU are still in this state with their cleanup to come later.
@@ -54,18 +56,22 @@ The data test board is still in use and has been upgraded with a button to place
 on the bus.  This was much more convenient than moving a jumper back and forth.  Several
 of the registers also have buttons temporarily installed to allow than to be loaded.
 
+### Ring Counter
+
 [![Ring Counter](../../assets/images/ring-counter-build.jpg "Ring Counter"){:width="400px"}](../../assets/images/ring-counter-build.jpg)
 
-In anticipation of the control ROMs, the [Ring Counter]("../ring-counter/") was added
+In anticipation of the control ROMs, the [Ring Counter](../ring-counter/) was added
 next.  This is really a binary microinstruction counter but it has an attached 3-to-8
 decoder that gives output that looks like a ring counter.  This output is only used for
 the LED display that indicates the step - the input to the ROMs will be the binary output
 of the counter. Still, the ring counter terminology is used to match the Ben Eater builds.
 
+### Output Register
+
 [![Output Register](../../assets/images/output-register-build.jpg "Output Register"){:width="400px"}](../../assets/images/output-register-build.jpg)
 
 The final component added before the control logic is the
-[Output Register]("../output-register/").  This is a 4-digit LED display that can show an
+[Output Register](../output-register/).  This is a 4-digit LED display that can show an
 8-bit result as hex, signed decimal, or unsigned decimal.  The Ben Eater build uses a
 ROM and counter to implement the output register, but NQSAP took a different direction
 that uses minimal hardware.  The display is driven by an ATmega328 microcontroller that
@@ -99,14 +105,14 @@ In the second photo, the temporary register control wiring from the register sel
 been replaced.  The Loader has also been upgraded.  The first version used 1-to-2
 multiplexors to allow that Loader to control the RAM and MAR.  These were replaced with
 registers that
-[directly controlled the register selectors]("../loader/#current-design---expanded-register-selects"),
+[directly controlled the register selectors](../loader/#current-design---expanded-register-selects),
 allowing the Loader to read or write to any system register, including the RAM.
 
 ## Oct 2020 - Stack pointer
 
 [![Stack Pointer](../../assets/images/stack-pointer-build.jpg "stack pointer"){:width="400px"}](../../assets/images/stack pointer-build.jpg)
 
-Added a [stack pointer]("../stack-pointer/") and its associated JSR, RTS, push, and pull
+Added a [stack pointer](../stack-pointer/) and its associated JSR, RTS, push, and pull
 instructions.  The hardware is a pair of 4-bit up/down counters wired to the bus through a
 74LS245 transceiver.
 
@@ -153,7 +159,7 @@ test feature really proved its worth here to verify that everything went back to
 correctly.
 
 With the new breadboard space now abailable, two new
-[user-accessible registers]("../dxy-registers/") were added along with an internal D
+[user-accessible registers](../dxy-registers/) were added along with an internal D
 register and a dedicated added that can add D to either X, Y, or zero.
 
 In addition to the new hardware, the instruction set got a major reorganization.  The X

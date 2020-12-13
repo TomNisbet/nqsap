@@ -76,7 +76,6 @@ the same time.
 
 ### Current Design - expanded register selects
 
-
 [![Arduino Loader and Control](../../assets/images/loader-and-control.jpg "loader and control logic"){:width="720px"}](../../assets/images/loader-and-control.jpg)
 
 The current iteration of the Loader adds two 74LS173 4-bit registers to drive the inputs
@@ -88,12 +87,15 @@ wired to both registers) and two Arduino outputs to drive the CLK lines to load 
 into one register or the other.  This allows the Loader to select up to 15 read registers
 and 15 write registers using only 6 Arduino outputs.  
 
-Note that the NQSAP currently has only one 3-to-8 decoder to select a read register, so
-the number of read registers in the system is limited to seven.  The loader supports
-another bit and there is a spare bit in the microcode ROM, so the read sources could
-expand to 15 (like the write registers) by simply finding the board space to wire in a
-second 3-to-8 decoder.  The NQSAP has several write-only registers, but isn't currently
-pushing the limits of read-write registers.
+A third 74LS173 was later added so that the Loader could control additional signals.  Two
+of the bits were used for the H register HL and HR lines and two are available for
+expansion.  Any bits controlled by this new register must be from ROM 2.
+
+When the Loader is active, it disables the OE lines of ROM 3 and ROM 2.  ROM 3 contains
+the 4-bit read register select and the 4-bit write register select.  ROM 2 contains the
+HR and HL signals.  Any other signals from ROM 2 that are not controlled by the Loader
+must have pull-up or pull-down resistors if they need to be in known states while the
+Loader is active.
 
 ## Loader implementation
 
@@ -105,7 +107,20 @@ it easier to plug in and remove the USB cable.
 
 [![Arduino Nanos with pins and sockets](../../assets/images/arduino-nanos.jpg "Arduino Nanos"){:width="400px"}](../../assets/images/arduino-nanos.jpg) [![Loader Arduino Nano installed](../../assets/images/loader-arduino.jpg "Loader Arduino"){:width="400px"}](../../assets/images/loader-arduino.jpg)
 
-Note that the Loader Arduino can be left in the circuit even when not connected to a
-controlling computer through USB.  Upon power up, the loader will activate itself and then
-load a default program into the NQSAP.  So even in standalone mode, the NQSAP will power
-up into a state where it has code to execute.
+Note that the Loader Arduino is designed to be left in the circuit even when not connected
+to a controlling computer through USB.  Upon power up, the loader will activate itself and
+then load a default program into the NQSAP.  So even in standalone mode, the NQSAP will
+power up into a state where it has code to execute.  There is no manual dip switch loader,
+so there is no way to load memory without the Arduino.
+
+The Arduino is powered from the NQSAP Vcc through a diode so that if the NQSAP is powered
+off it does not try to draw power from the Arduino's USB port.  The USB port is connected
+to the host computer with a hub that has individual power switched, allowing the host
+computer's power to be disconnected from the NQSAP.
+
+## Bill of Materials
+
+* 74LS04 hex inverter (1)
+* 74LS08 quad 2-input AND gate (1)
+* 74LS173 4-bit register (3)
+* Arduino Nano

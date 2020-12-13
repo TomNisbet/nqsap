@@ -4,16 +4,47 @@ permalink: /docs/registers/
 excerpt: "Building the general purpose registers of the NQSAP computer"
 ---
 
-[![Initial Register Implementation](../../assets/images/registers-1.jpg "early register build"){:width="400px"}](../../assets/images/registers-1.jpg) [![Register Implementation](../../assets/images/registers-2.jpg "A and B registers"){:width="400px"}](../../assets/images/registers-2.jpg)
+[![Register Implementation](../../assets/images/registers-2.jpg "A and B registers")](../../assets/images/registers-2.jpg)
 
 The initial build had only an A register and a B register.  These two provide the inputs
 to the ALU. The A register is the accumulator, storing the result of ALU operations.  It
 can be read and written with a variety of load and store instructions and its value can be
 sent to the output display.
 
-The A register was built using the standard pair of 74LS173 4-bit registers plus a 74LS245
-bus transceiver.  This worked well, although it may be replaced in the future to add some
-additional ALU capabilities.
+## H Register and Accumulator
+
+The A register was initially built using the standard pair of 74LS173 4-bit registers plus
+a 74LS245 bus transceiver. In a later build, the ALU's A register was replaced with a pair
+of 74LS194 4-bit universal shift registers.  These provided the same basic register
+operation of the 173's, but added shift capabilities to enable the LSR, ROL, and ROT
+instructions.
+
+The shift register has two control lines that select parallel load, shift left, shift
+right, or no-operation.  These are wired to the ROM and labelled HR and HL.  An additional
+ROM line called HC controls the carry-in of the shift register, selecting zero or the
+carry flag register as the source.
+
+When the shift register was added. the ALU-A and accumulator functions were split into two
+registers.  The shift register connected to the ALU A inputs is now labelled as H (sHift
+register). A separate A register, the user-accessible accumulator, was added  using a
+74HCT574 8-bit register and a 74HCT245 bus transceiver.  The A register is not connected
+to the ALU and does not need to be physically near the ALU chips.  It is on the same board
+as the RAM chip because there was free space available at that spot.
+
+The H register's write operation is not controlled by the usual memory select circuit, so
+it can be written at the same time as any other register.  By convention, the microcode
+always writes H whenever it writes A, so H will always have the same value as A at the
+start of a new instruction.  The microcode is free to use H independently, but it must be
+restored from A at the end of the instruction.
+
+The HL and HR lines can also be controlled by the Loader, allowing a self test of H.  The
+test includes the usual register read right and also tests the shift functionality.
+
+The A and H register split was done so that memory instructions could use the H register
+without disturbing the accumulator.  With a maximum of eight microinstructions per
+instruction, there was not enough space to implement instructions like INC and ROR using
+memory operands.  One microinstruction was saved because the value of H does not need to
+be saved for temporary use - it is always available to be restored from A.
 
 ## B Register
 
@@ -55,8 +86,6 @@ Ring Counter, so this signal can be used as input the the B register NOR gate or
 the unused gates can be used as an inverter for the readily available non-inverted clock
 signal.
 
-
-
 ## Register Layout
 
 One thing that needed to be considered for the B register design was the spacing required
@@ -71,3 +100,10 @@ the number of connections to the ground bus.  This was able to be placed directl
 register outputs.  Note that these LEDs have
 [built-in resistors](../getting-started/#5v-leds), so they can be connected directly from
 the chip output to ground with no worries.
+
+## Bill of Materials
+
+* 74LS02 quad 2-input NOR gate (1)
+* 74LS194 4-bit universal shift register (2)
+* 74HCT245 8-bit bus transceiver (2)
+* 74HCT574 8-bit register (1)

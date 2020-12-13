@@ -67,6 +67,12 @@ few NOR and AND gates are used (as in the Ben Eater design) to detect all zeroes
 ALU output.  The ALU does have an _A=B_ bit that can be used for comparison operations,
 but it is not used in the NQSAP design.
 
+**Update:** the NOR/AND solution was replaced with a single 74HCT688 8-bit comparator.
+*One set of inputs is tied low, so the comparator matches when the other set of inputs are
+*all zero. In addition, the inputs of the comparator are now tied to the bus instead of
+*the ALU output, so the zero detect can be used with non-ALU operations like register
+*loads or transfers.
+
 ### Carry flag
 
 Using the carry flag output (C<sub>n+4</sub>) as a processor flag is not straightforward
@@ -104,4 +110,9 @@ individual D flip flops. This will require more microcode control lines, but wil
 granular control over when the flags change. It will also allow instructions to set or
 reset individual flags.  This is particularly important because the addition and
 subtraction instructions always use the carry flag, so a clear carry is needed to do an
-initial operation.
+initial add or subtract operation.
+
+## Bill of Materials
+
+* 74LS181 4-bit Arithmetic Logic Unit (2)
+* 74HCT245 8-bit bus transceiver (1)

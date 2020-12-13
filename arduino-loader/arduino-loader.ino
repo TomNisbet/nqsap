@@ -186,6 +186,23 @@ static const uint8_t pgmChase[] = {
     0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00
 };
 
+static const uint8_t pgmShift[] = {
+    IM_LDA, 0x03,
+    AA_ASL,
+    AA_ASL,
+    AA_ASL,
+    AA_ASL,
+    AA_ASL,
+    AA_ASL,
+    AA_LSR,
+    AA_LSR,
+    AA_LSR,
+    AA_LSR,
+    AA_LSR,
+    AA_LSR,
+    AB_JMP, 0x02
+};
+
 static const uint8_t pgmCount3[] = {
     // Count by 3
     IM_LDA, 10,   // start at 10
@@ -259,6 +276,7 @@ struct program_t {
 };
 static const program_t programs[] = {
     pgmChase,       sizeof(pgmChase),
+    pgmShift,       sizeof(pgmShift),
     pgmCount3,      sizeof(pgmCount3),
     pgmJumpTest,    sizeof(pgmJumpTest),
     pgmStack1,      sizeof(pgmStack1),

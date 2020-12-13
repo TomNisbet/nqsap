@@ -50,8 +50,10 @@ value is retrieved.
 Note that the Jump to Subroutine (JSR) uses a few tricks in the microcode.  The value of
 the PC is needed to retrieve the subroutine address, but the PC also needs to be saved
 onto the stack before being overwritten with the new address.  The ALU B register is used
-for temporary storage to save the subroutine address.  The B register can not be directly
-read, but there is an ALU operation that returns the B register value.  Because the ALU
-control lines are tied to the Instruction Register, the JSR instruction must use an opcode
-that selects the "B" operation.  The B register is not directly accessible by the user, so
-it is a good candidate for the microcode to use.
+for temporary storage to save the subroutine address.  The B register is not directly
+accessible by the user, so it is a good candidate for the microcode to use.
+
+## Bill of Materials
+
+* 74LS169 4-bit up/down counter (2)
+* 74HCT245 8-bit bus transceiver (1)

@@ -43,6 +43,8 @@ class LoaderHw
     uint8_t localCompute(uint8_t op, uint8_t a, uint8_t b);
     bool testAdder();
     bool testAdderOperation(uint8_t a, uint8_t b);
+    bool shiftTest(uint8_t ctl, uint8_t start, uint8_t count);
+    bool testShifter();
 
     void selectWriteRegister(uint8_t reg);
     void selectReadRegister(uint8_t reg);

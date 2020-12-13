@@ -6,9 +6,15 @@
 // USB reserves pins 0..1
 // Data bus is pins 2..9
 enum {
+    CCLK = 10,  // OUTPUT - clock for the ROM control lines
     PGM = 11,   // OUTPUT - puts the host in PROGRAM mode
     CLK = 12,   // OUTPUT - drives the host CLK line
     RST = 13    // OUTPUT - drives the host RST line
+};
+
+enum {
+    CTL_HL = 0x01,
+    CTL_HR = 0x02
 };
 
 enum {
@@ -73,16 +79,17 @@ enum {
     REG_X =   0x0a,
     REG_Y =   0x0b,
     REG_OUT = 0x0c,
+    REG_H =   0x0d,
     REG_IR =  0x0f
 };
 
 
 static const char * registerNames[] = {
     "none", "MEM", "A",  "B",   "ALU", "SP", "PC", "07",
-    "D",    "MAR", "X",  "Y",   "OUT", "0d", "0e", "IR"
+    "D",    "MAR", "X",  "Y",   "OUT", "H",  "0e", "IR"
 };
-static const unsigned woRegisters[] = { REG_OUT, REG_MAR, REG_IR };
-static const unsigned rwRegisters[] = { REG_D, REG_X, REG_Y, REG_A, REG_B, REG_PC, REG_SP };
+static const unsigned woRegisters[] = { REG_MAR, REG_IR, REG_OUT };
+static const unsigned rwRegisters[] = { REG_PC, REG_D, REG_X, REG_Y, REG_H, REG_B, REG_SP, REG_A };
 static unsigned numWoRegisters() { return sizeof(woRegisters) / sizeof(*woRegisters); }
 static unsigned numRwRegisters() { return sizeof(rwRegisters) / sizeof(*rwRegisters); }
 
@@ -94,6 +101,10 @@ static void waitForUser(const char * s = 0) {
     while (Serial.read() == -1) {}
 }
 #endif
+
+
+static void setControlBits(uint8_t bits);
+static void clearControlBits(uint8_t bits);
 
 LoaderHw::LoaderHw(uint32_t size)
     : mSize(size), mEnabled(false)
@@ -115,6 +126,8 @@ void LoaderHw::begin() {
     // External pull-up resistors are present on RST and PGM.  An external pull-down is on
     // CLK.  This allows the system to function as normal if the arduino is not present,
     // although without a way to load programs there isn't a lot that the system will do.
+    digitalWrite(CCLK, LOW);    // Normally LOW, pulse HIGH to generate a clock
+    pinMode(CCLK, OUTPUT);
     digitalWrite(PGM, HIGH);    // PGM is active LOW
     pinMode(PGM, OUTPUT);
     digitalWrite(RST, HIGH);    // RST is active LOW
@@ -215,13 +228,19 @@ byte LoaderHw::readByte(uint32_t address) {
     return data;
 }
 
+
 bool LoaderHw::testHardware() {
     unsigned ix;
 
     enable();
+    for (ix = 0; (ix < 16); ix++) {
+        writeRegister(ix, 0);
+    }
+
     for (ix = 0; (ix < numRwRegisters()); ix++) {
         writeRegister(REG_IR, 0);  // NOP so no control lines asserted
         writeRegister(REG_X, 0);   // Have adder return D+0 for D register test
+        writeRegister(REG_Y, 0);
         if (!testRegister(rwRegisters[ix], true)) {
             return false;
         }
@@ -233,15 +252,11 @@ bool LoaderHw::testHardware() {
         }
     }
 
-    if (!testMemory()) {
-        return false;
-    }
-
-    if (!testAlu()) {
-        return false;
-    }
-
-    return testAdder();
+    bool ret = testMemory();
+    if (ret) ret = testAlu();
+    if (ret) ret = testAdder();
+    if (ret) ret = testShifter();
+    return ret;
 }
 
 
@@ -326,6 +341,7 @@ bool LoaderHw::testMemory() {
     return true;
 }
 
+
 bool LoaderHw::testAlu() {
     unsigned numPatterns = sizeof(patterns);
     unsigned numOperations = sizeof(aluUnaryOperations);
@@ -369,7 +385,7 @@ bool LoaderHw::testAluOperation(uint8_t op, const char * opName, uint8_t a, uint
 
 uint8_t LoaderHw::aluCompute(uint8_t op, uint8_t a, uint8_t b) {
     writeRegister(REG_IR, op);
-    writeRegister(REG_A, a);
+    writeRegister(REG_H, a);
     writeRegister(REG_B, b);
     return readRegister(REG_ALU);
 }
@@ -429,12 +445,13 @@ bool LoaderHw::testAdderOperation(uint8_t a, uint8_t b) {
         return false;
     }
 
-    // Test that the Adder result can be transfered back to X without corruption
-    transferRegister(REG_X, REG_D);
-    readVal = readRegister(REG_X);
+    // Test that the Adder result can be transfered back to Y without corruption
+    transferRegister(REG_Y, REG_D);
+    selectWriteRegister(REG_NONE);
+    readVal = readRegister(REG_Y);
     if (readVal != expectedVal) {
         char s[60];
-        sprintf(s, "FAILED to transfer - X=%02x D=%02x, result=%02x, expected=%02x", a, b, readVal, expectedVal);
+        sprintf(s, "FAILED to transfer - Y=%02x D=%02x, result=%02x, expected=%02x", a, b, readVal, expectedVal);
         Serial.println(s);
         return false;
     }
@@ -442,6 +459,54 @@ bool LoaderHw::testAdderOperation(uint8_t a, uint8_t b) {
     return true;
 }
 
+bool LoaderHw::shiftTest(uint8_t ctl, uint8_t start, uint8_t count) {
+    clearControlBits(0x0f);
+    writeRegister(REG_H, start);
+    writeRegister(REG_NONE, 0);
+    for (int ix = 0; (ix < count); ix++) {
+        setControlBits(ctl);
+        delay(250);
+        clkPulse();
+        uint8_t readVal = readRegister(REG_H);
+        start = (ctl == CTL_HL) ? start << 1 : start >> 1;
+        if (readVal != start) {
+            char s[60];
+            sprintf(s, "FAILED shift test - result=%02x, expected=%02x", readVal, start);
+            Serial.println(s);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool LoaderHw::testShifter() {
+    bool ret = shiftTest(CTL_HL, 0x01, 8);
+    if (ret) ret = shiftTest(CTL_HR, 0x80, 8);
+    if (ret) ret = shiftTest(CTL_HL, 0x55, 8);
+    if (ret) ret = shiftTest(CTL_HR, 0xAA, 8);
+    clearControlBits(CTL_HL | CTL_HR);
+    return ret;
+}
+
+
+static void setControlRegister(uint8_t clearBits, uint8_t setBits) {
+    static uint8_t controls;
+
+    controls &= ~clearBits;
+    controls |= setBits;
+    PORTC = controls & REGSEL_MASK;
+    delayMicroseconds(1);
+    digitalWrite(CCLK, HIGH);
+    delayMicroseconds(1);
+    digitalWrite(CCLK, LOW);
+}
+
+static void setControlBits(uint8_t bits) {
+    setControlRegister(0, bits);
+}
+static void clearControlBits(uint8_t bits) {
+    setControlRegister(bits, 0);
+}
 
 static void selectRegister(uint8_t reg, uint8_t clk) {
     reg &= REGSEL_MASK;
@@ -456,7 +521,15 @@ void LoaderHw::selectWriteRegister(uint8_t reg) {
     if (reg != REG_NONE) {
         enable();
     }
-    selectRegister(reg, REGSEL_WCLK);
+    if (reg == REG_H) {
+        // Register H is controlled by two dedicated ROM lines (HL, HR) rather than by the
+        // 3-to-8 register selectors.
+        selectRegister(0, REGSEL_WCLK);
+        setControlBits(CTL_HL | CTL_HR);
+    } else {
+        selectRegister(reg, REGSEL_WCLK);
+        clearControlBits(CTL_HL | CTL_HR);
+    }
 }
 
 void LoaderHw::selectReadRegister(uint8_t reg) {

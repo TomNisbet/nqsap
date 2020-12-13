@@ -36,8 +36,8 @@ docs:
     children:
       - title: "Tips"
         url: /docs/tips/
-      - title: "Next Steps"
-        url: /docs/next-steps/
+      - title: "Build History"
+        url: /docs/build-history/
   - title: "Instruction Set"
     children:
       - title: "Instruction Summary"

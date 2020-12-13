@@ -355,6 +355,7 @@ def makeInstructionsByOpcode(filename):
                 else:
                     f.write('      |')
         f.write('\n\n')
+        writeFileFooter(f)
 
 
 def makeInstructionsByModeGroup(filename):
@@ -383,7 +384,6 @@ def makeInstructionsByModeGroup(filename):
             f.write('{:13}|'.format(aluOperations.get(hex2(row), "")))
 
         f.write('\n\n')
-
         writeFileFooter(f)
 
 
@@ -429,7 +429,7 @@ with open(specificFile, 'rb') as inFile:
 for name in sorted(instructions):
     gi = instructions[name]
     if not gi.specifics and gi.isNqsap:
-        print "Supported instruction with no specific instructions", i
+        print "Supported instruction with no specific instructions", gi
     elif gi.specifics and not gi.isNqsap:
         print "Unsupported instruction with specific instructions", name
     # Put the instructions modes in order

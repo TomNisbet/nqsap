@@ -79,13 +79,13 @@ handles the display drive as well as the data latching.  This minimal-hardware
 implementation uses only the controller, display, and four resistors.
 
 Its a bit of a cheat for a TTL computer build to use a microcontroller that has vastly
-more power than the entire resulting computer.  But this was an interesting build and it
-can be argued that the display is really more of a peripheral than an integrated part of
-the computer.
+more power than the entire resulting computer.  But the 328 version was an interesting
+design exercise and it can be argued that the display is really more of a peripheral than
+an integrated part of the computer.
 
 The first picture above shows the first prototype of the display, complete with the AVR
-cable used to program the 328.  The second shows the completed output register in place.
-The resistors are beneath the LED display and are not visible in the picture.
+ISP cable used to program the 328.  The second shows the completed output register in
+place. The resistors are beneath the LED display and are not visible in the picture.
 
 
 ### Jun 2020 - ROM and register selects
@@ -93,10 +93,10 @@ The resistors are beneath the LED display and are not visible in the picture.
 [![Control logic and Microcode ROMs](../../assets/images/control-build-1.jpg "control logic and ROMs"){:width="400px"}](../../assets/images/control-build-1.jpg)[![Control logic cleanup](../../assets/images/control-build-2.jpg "control logic cleanup"){:width="400px"}](../../assets/images/control-build-2.jpg)
 
 The first fully-operational version of the NQSAP computer was completed in June. The
-addition of the control circuits tied all of the existing components together into a
-working computer that could perform simple operations.
+addition of the control circuits and microcode ROMs tied all of the existing components
+together into a working computer that could perform simple operations.
 
-The first picture shows the register select logic and the microcontrol ROMs.  Only two
+The first picture shows the register select logic and the microcode ROMs.  Only two
 ROMs were used in the first build.  ROM2 is dedicated to the register select logic and
 ROM0 has miscellaneous housekeeping control signals like reset the ring counter and
 increment the program counter.
@@ -108,13 +108,17 @@ registers that
 [directly controlled the register selectors](../loader/#current-design---expanded-register-selects),
 allowing the Loader to read or write to any system register, including the RAM.
 
+This first instruction set had only a dozen or so instructions.  The later addition of
+more registers and addressing mode grew the instruction set to over one hundred unique
+opcodes.
+
 ## Oct 2020 - Stack pointer
 
 [![Stack Pointer](../../assets/images/stack-pointer-build.jpg "stack pointer"){:width="400px"}](../../assets/images/stack pointer-build.jpg)
 
-Added a [stack pointer](../stack-pointer/) and its associated JSR, RTS, push, and pull
-instructions.  The hardware is a pair of 4-bit up/down counters wired to the bus through a
-74LS245 transceiver.
+The next expansion added a [stack pointer](../stack-pointer/) and its associated JSR, RTS,
+push, and pull instructions.  The hardware is a pair of 4-bit up/down counters wired to
+the bus through a 74LS245 transceiver.
 
 The stack pointer was placed in the previously empty area on the left side of the MAR
 breadboard.
@@ -158,7 +162,7 @@ The ALU is now in its new position with temporary bus connections.  The Loader's
 test feature really proved its worth here to verify that everything went back together
 correctly.
 
-With the new breadboard space now abailable, two new
+With the new breadboard space now available, two new
 [user-accessible registers](../dxy-registers/) were added along with an internal D
 register and a dedicated added that can add D to either X, Y, or zero.
 
@@ -197,6 +201,10 @@ registers always contain the same value.
 The zero detect circuit was also moved so that it takes its input from the bus instead of
 the ALU outputs.  This allows the Z flag to be set on non-ALU operations like register
 loads and transfers.
+
+The new control lines, plus the lines for the planned expansion of the flags capabilities
+required the use of the remaining microcode EEPROM slots.  The system now contains four
+ROMs with a total of thirty two control lines.
 
 ## Future
 

@@ -4,7 +4,7 @@ permalink: /docs/build-history/
 excerpt: "NQSAP computer build history (blog)"
 ---
 
-## Apr 2020 - Initial build
+## Apr 2020 - Build Planning
 
 I saw the Ben Eater videos in April and immediately started ordering breadboards and LEDs.
 Other than the ALU chips, most of the other 74LS parts were already on-hand.
@@ -88,7 +88,7 @@ ISP cable used to program the 328.  The second shows the completed output regist
 place. The resistors are beneath the LED display and are not visible in the picture.
 
 
-### Jun 2020 - ROM and register selects
+### Jun 2020 - ROM and Register Selects
 
 [![Control logic and Microcode ROMs](../../assets/images/control-build-1.jpg "control logic and ROMs"){:width="400px"}](../../assets/images/control-build-1.jpg)[![Control logic cleanup](../../assets/images/control-build-2.jpg "control logic cleanup"){:width="400px"}](../../assets/images/control-build-2.jpg)
 
@@ -112,7 +112,7 @@ This first instruction set had only a dozen or so instructions.  The later addit
 more registers and addressing mode grew the instruction set to over one hundred unique
 opcodes.
 
-## Oct 2020 - Stack pointer
+## Oct 2020 - Stack Pointer
 
 [![Stack Pointer](../../assets/images/stack-pointer-build.jpg "stack pointer"){:width="400px"}](../../assets/images/stack pointer-build.jpg)
 
@@ -123,7 +123,7 @@ the bus through a 74LS245 transceiver.
 The stack pointer was placed in the previously empty area on the left side of the MAR
 breadboard.
 
-## Nov 2020 - DXY index registers
+## Nov 2020 - DXY Index Registers
 
 The next logical extension of the NQSAP was the addition of one or two new user-accessible
 registers.  These would be general purpose registers, but they would also be used to add
@@ -171,15 +171,15 @@ and Y registers and their new addressing modes made it possible to build a 6502-
 machine, so the existing instructions we reorganized and many new instructions and address
 modes were added to implement much of the 6502 instruction set.
 
-## Dec 2020 - Shift register
+## Dec 2020 - Shift Register
 
 [![Shift Register](../../assets/images/shift-register-build.jpg "shift register"){:width="400px"}](../../assets/images/shift-register-build.jpg)
 
-The initial build used ALU A register that also served as the user-accessible accumulator.
-This was implemented with a pair of 74LS173 4-bit registers.  These were replaced with a
-pair of 74LS194 4-bit universal shift registers.  Due to the pin layout, the chips were
-almost a drop-in replacement, although they needed to be mounted facing the opposite way
-as the previous chips.
+The early NQSAP builds used ALU A register that also served as the user-accessible
+accumulator. This was implemented with a pair of 74LS173 4-bit registers.  These were
+replaced with a pair of 74LS194 4-bit universal shift registers.  Due to the pin layout,
+the chips were almost a drop-in replacement, although they needed to be mounted facing the
+opposite way as the previous chips.
 
 Because the shift registers have a direct parallel load capability, they can be used as
 general-purpose registers.  The addition of the shift features allowed for new shift and
@@ -208,7 +208,7 @@ ROMs with a total of thirty two control lines.
 
 ## Future
 
-### Memory expansion
+### Memory Expansion
 
 This one could be tricky.  A wider bus, to 12 or 16 bits would be a huge effort - it would
 probably be easier to just start over rather than to retrofit a new bus.
@@ -224,7 +224,7 @@ One tricky part of memory expansion is the CALL and RET instructions.  If the ad
 while incrementing to get the second part of the call address.  This makes pushing the
 return address more difficult.
 
-### Memory segmentation
+### Memory Segmentation
 
 One simple way to increase available memory is to use separate memory areas for program,
 data, and stack.  The 32K RAM chip is only using eight of the fifteen available address

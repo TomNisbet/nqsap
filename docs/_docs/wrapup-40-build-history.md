@@ -39,12 +39,13 @@ bus LEDs.
 
 [![PC, IR, and Loader](../../assets/images/pc-ir-loader.jpg "Program Counter, Instruction Register and Loader"){:width="400px"}](../../assets/images/pc-ir-loader.jpg)
 
-The Program Counter, Instruction Register, and [Loader](../loader/) were added next.  As
-with other parts of the build, initial assembly used jumper wires and ribbon cables to
-prove out the design before committing to cutting and placing the permanent interconnect
-wires.  Parts of the ALU are still in this state with their cleanup to come later.
+The Program Counter, Instruction Register, and [Loader/Monitor](../loader/) were added
+next.  As with other parts of the build, initial assembly used jumper wires and ribbon
+cables to prove out the design before committing to cutting and placing the permanent
+interconnect wires.  Parts of the ALU are still in this state with their cleanup to come
+later.
 
-The ribbon in the center left of the board connects to spot for the Arduino Nano that
+The ribbon in the center left of the board connects to the spot for the Arduino Nano that
 implements the Loader/Monitor.
 
 The program counter uses an LED bar display from the parts drawer.  This doesn't match any
@@ -68,7 +69,7 @@ of the counter. Still, the ring counter terminology is used to match the Ben Eat
 
 ### Output Register
 
-[![Output Register](../../assets/images/output-register-build.jpg "Output Register"){:width="400px"}](../../assets/images/output-register-build.jpg)
+[![Output Register prototype](../../assets/images/output-register-build.jpg "Output Register prototype"){:width="400px"}](../../assets/images/output-register-build.jpg)[![Output Register](../../assets/images/output-register-build-2.jpg "Output Register"){:width="400px"}](../../assets/images/output-register-build-2.jpg)
 
 The final component added before the control logic is the
 [Output Register](../output-register/).  This is a 4-digit LED display that can show an
@@ -84,8 +85,8 @@ design exercise and it can be argued that the display is really more of a periph
 an integrated part of the computer.
 
 The first picture above shows the first prototype of the display, complete with the AVR
-ISP cable used to program the 328.  The second shows the completed output register in
-place. The resistors are beneath the LED display and are not visible in the picture.
+ISP cable used to program the 328.  The second picture shows the completed output register
+in place. The resistors are beneath the LED display and are not visible in the picture.
 
 
 ### Jun 2020 - ROM and Register Selects
@@ -101,14 +102,16 @@ ROMs were used in the first build.  ROM2 is dedicated to the register select log
 ROM0 has miscellaneous housekeeping control signals like reset the ring counter and
 increment the program counter.
 
-In the second photo, the temporary register control wiring from the register selectors has
-been replaced.  The Loader has also been upgraded.  The first version used 1-to-2
-multiplexors to allow that Loader to control the RAM and MAR.  These were replaced with
-registers that
+In the second picture, the temporary register control wiring from the register selectors
+has been replaced with permanent connections.  The Loader has also been upgraded.  The
+first version used 1-to-2 multiplexers to allow the Loader to access the RAM and MAR.
+These multiplexers were replaced with registers that
 [directly controlled the register selectors](../loader/#current-design---expanded-register-selects),
-allowing the Loader to read or write to any system register, including the RAM.
+allowing the Loader to read or write to any system register, including the RAM.  With this
+change, the Loader/Monitor was able to add many new features, including a self-test of the
+NQSAP hardware.
 
-This first instruction set had only a dozen or so instructions.  The later addition of
+The first instruction set had only a dozen or so instructions.  The later addition of
 more registers and addressing mode grew the instruction set to over one hundred unique
 opcodes.
 
@@ -149,9 +152,10 @@ spot to free up two boards above the A register.
 
 [![ALU disconnect](../../assets/images/move-2.jpg "ALU disconnect"){:width="200px"}](../../assets/images/move-2.jpg)
 
-ALU move in progress.  Other than the bus connections, most everything stayed intact.
-Some LEDs that shared the power buses needed to be pried out, but they stayed more or less
-together and went back in with minimal effort.
+The ALU and its registers have very few external connections, so the module came out
+easily.  Other than the bus connections, most everything stayed intact. Some LEDs that
+shared the power buses needed to be pried out, but they stayed more or less together and
+went back in with minimal effort.
 
 At the start, it looked like the bus connections might be able to move along with the
 boards, but at some point it just because easier to pull them for later replacement.
@@ -164,7 +168,7 @@ correctly.
 
 With the new breadboard space now available, two new
 [user-accessible registers](../dxy-registers/) were added along with an internal D
-register and a dedicated added that can add D to either X, Y, or zero.
+register and a dedicated adder that can add D to either X, Y, or zero.
 
 In addition to the new hardware, the instruction set got a major reorganization.  The X
 and Y registers and their new addressing modes made it possible to build a 6502-like
@@ -175,11 +179,11 @@ modes were added to implement much of the 6502 instruction set.
 
 [![Shift Register](../../assets/images/shift-register-build.jpg "shift register"){:width="400px"}](../../assets/images/shift-register-build.jpg)
 
-The early NQSAP builds used ALU A register that also served as the user-accessible
-accumulator. This was implemented with a pair of 74LS173 4-bit registers.  These were
-replaced with a pair of 74LS194 4-bit universal shift registers.  Due to the pin layout,
-the chips were almost a drop-in replacement, although they needed to be mounted facing the
-opposite way as the previous chips.
+The early NQSAP builds used an ALU A register that also served as the user-accessible
+accumulator. This was implemented with a pair of 74LS173 4-bit registers.  The upgrade
+replaced these registers with a pair of 74LS194 4-bit universal shift registers.  Due to
+the pin layout, the chips were almost a drop-in replacement, although they needed to be
+mounted facing the opposite way as the previous chips.
 
 Because the shift registers have a direct parallel load capability, they can be used as
 general-purpose registers.  The addition of the shift features allowed for new shift and

@@ -166,14 +166,18 @@ The ALU is now in its new position with temporary bus connections.  The Loader's
 test feature really proved its worth here to verify that everything went back together
 correctly.
 
-With the new breadboard space now available, two new
-[user-accessible registers](../dxy-registers/) were added along with an internal D
-register and a dedicated adder that can add D to either X, Y, or zero.
+[![DXY test](../../assets/images/move-4.jpg "DXY test"){:width="200px"}](../../assets/images/move-4.jpg)
 
-In addition to the new hardware, the instruction set got a major reorganization.  The X
-and Y registers and their new addressing modes made it possible to build a 6502-like
-machine, so the existing instructions we reorganized and many new instructions and address
-modes were added to implement much of the 6502 instruction set.
+With the new breadboard space now available, two user-accessible X and Y registers were
+added along with an internal D register and a dedicated adder that can add D to either X,
+Y, or zero.  The initial wiring was done with ribbon jumpers and terminated jumpers to
+test the design.  The was later replaced with the permanent wiring as shown in the picture
+on the  [DXY Registers](../dxy-registers/) documentation page.
+
+In addition to the new hardware, the [instruction set](../in-summary/) got a major
+reorganization.  The X and Y registers and their new addressing modes made it possible to
+build a 6502-like machine, so the existing instructions we reorganized and many new
+instructions and address modes were added to implement much of the 6502 instruction set.
 
 ## Dec 2020 - Shift Register
 

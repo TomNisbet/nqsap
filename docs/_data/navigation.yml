@@ -32,6 +32,8 @@ docs:
         url: /docs/stack-pointer/
       - title: "DXY Registers"
         url: /docs/dxy-registers/
+      - title: "Flags"
+        url: /docs/flags/
   - title: "Wrap-up"
     children:
       - title: "Tips"

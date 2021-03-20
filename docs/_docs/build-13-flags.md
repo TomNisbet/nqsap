@@ -4,7 +4,7 @@ permalink: /docs/flags/
 excerpt: "Building the flags and conditional jump logic of the NQSAP computer"
 ---
 
-[![Flags Design](../../assets/images/flags-circuit.jpg "flags and jump logic"){:width="400px"}](../../assets/images/flags-circuit.jpg)
+[![Flags Design](../../assets/images/flags-circuit.png "flags and jump logic"){:width="400px"}](../../assets/images/flags-circuit.png)
 
 ## Initial Design
 
@@ -16,7 +16,7 @@ the microcode EEPROMs.
 
 This design suffers from a few problems:
 * Limited number of address lines available to expand to more flags
-* Changing flag values causes the control ROM outputs to briefly glitch to unknown values.
+* Changing flag values causes the control ROM outputs to briefly glitch to unknown values
 * Flags cannot be set independently
 
 ## New Design (in-progress)
@@ -29,10 +29,10 @@ This design is still a work-in-progress.  Most of it has been prototyped, but a 
 and ROM output problem is causing the flag registers to load unpredictably.
 
 The new design has the following features:
-* Four flags that match the behavior of the 6502's Carry, Zero, Negative, and oVerflow flags.
-* An instruction's microcode can set any or all of the flags independently.
-* Flags can be read or written to the bus, allowing push and pull of the processor status.
-* External hardware to control the conditional jump instructions, requires no ROM address lines.
+* Four flags that match the behavior of the 6502's Carry, Zero, Negative, and oVerflow flags
+* An instruction's microcode can set any or all of the flags independently
+* Flags can be read or written to the bus, allowing push and pull of the processor status
+* External hardware to control the conditional jump instructions, requires no ROM address lines
 
 The left side of the schematic contains the logic to determine the flag values to be set.
 The 74LS157 in the center allows the flags to be loaded from a hardware source like the ALU

@@ -52,12 +52,43 @@ unconditional jump instructions.  When the Carry flag is moved from the control 
 additional logic will also needed to drive the Carry flag input into the ALU rather than
 controlling it though microcode.
 
-A [recent reddit post by WirralChris](https://www.reddit.com/r/beneater/comments/m76ijz/opcodes_and_flag_decoding_circuit/)
-has a different approach to conditional jumps using hardware.  Instead of driving the
-LOAD line of the PC, the circuit sits between the IR and the ROM and conditionally jams a
-NOP or JMP instruction to the microcode depending on the state of the flags.  One
-interesting part of the design is that the opcodes of the jump instructions are arranged
-so that the flag of interest can be determined by bits from the IR.  NQSAP already does
-this to drive the ALU select lines for arithmetic and logic operations and it would likely
-save some ROM control lines to do it for flags also.  The J0, J1, and J2 lines from the
-ROM would be replaced with bits from the IR.
+The [Opcodes and Flag decoding circuit](https://www.reddit.com/r/beneater/comments/m76ijz/opcodes_and_flag_decoding_circuit/)
+post on reddit has a different approach to conditional jumps using hardware.  Instead of
+driving the LOAD line of the PC, the circuit sits between the IR and the ROM and
+conditionally jams a NOP or JMP instruction to the microcode depending on the state of the
+flags.  One interesting part of the design is that the opcodes of the jump instructions
+are arranged so that the flag of interest can be determined by bits from the IR.  NQSAP
+already does this to drive the ALU select lines for arithmetic and logic operations and it
+would likely save some ROM control lines to do it for flags also.  The J0, J1, and J2
+lines from the ROM would be replaced with bits from the IR.
+
+## Flag Calculations
+
+The Negative flag is simply the MSB of the data bus.
+
+The Zero flag uses an 8-bit comparator to test for zero.  This saves a chip over the
+AND/OR circuit used in the Ben Eater computer, but is functionally equivalent.
+
+The oVerflow flag is calculated using a 74LS151 8-to-1 selector as described in
+[74181 with V_Flag](http://6502.org/users/dieter/v_flag/v_4.htm) on 6502.org.
+
+The Carry flag has several inputs that can set it.  For arithmetic operations, it uses the
+carry output of the 74LS181 ALU chip.  For shift operations, it is set by the LSB or the
+MSB value of the H register.  An ever-present 74LS151 chooses from the different inputs as
+selected by the C0 and C1 bits from the control ROMs.
+
+Any or all of the flags can also be loaded from the bus.  This allows for a "pull flags"
+instruction to restore the set of flags.  This capability is also leveraged for the
+individual flag set and clear instructions, like CLC, CLV, and SEC.  The ALU chip has an
+operation that puts all ones on the bus and another that puts out all zeroes.  By putting
+the ALU in one of these modes and enabling individual flag load lines, a flag can be set
+or cleared by the microcode.
+
+## Other References
+
+[Question for all 74ls181 alu people](https://www.reddit.com/r/beneater/comments/kmuuex/question_for_all_74ls181_alu_people)
+on reddit led to the design of the oVerflow flag.
+
+[How to add a decremental and incremental circuit to the ALU ?](https://www.reddit.com/r/beneater/comments/jwxke0/how_to_add_a_decremental_and_incremental_circuit/)
+on reddit inspired the idea to drive the PC load line from the flags instead of running
+the flags through the microcode.

@@ -21,6 +21,16 @@ can be generated programmatically in the Arduino code.  Because the Mode and Sel
 are wired to the Instruction Register, only the Carry-in signal is connected to the
 microcode ROMs.
 
+Note that the subtract and compare instructions both need the ALU to be in subtract mode.
+Because the ALU select lines are hard-wired to the IR, there are only eight opcodes
+available that put the ALU in the correct mode.  To create the sixteen different opcodes
+that are needed for all of the addressing mode combinations of the subtract and compare
+instructions, a NOR gate is placed between the inverted IR output and the ALU S0 input.
+The other NOR input is the microcode ROM LS (aLu Subtract) line.  When this is asserted,
+the ALU S0 is forced to zero.  This is used to create a new set of eight subtract mode
+instructions by setting the ALU select bits to 0110 when the low IR bits are 0111.  The
+ALU operation for 0111 would normally be A and not B, which isn't useful.
+
 In addition to the 74181 ALUs, the NQSAP ALU module needs a few more chips.  As with other
 read registers in the NQSAP, a 74LS245 bus transceiver is used to selectively place the
 ALU result on the bus.  
@@ -32,7 +42,9 @@ Note that the ALU result is a read-only register.
 |M | Cn| S3| S2| S1| S0|Operation|
 |:---:|:---:|:---:|:---:|:---:|:---:|---|
 |0 | 0 | 0 | 0 | 0 | 0 | A plus 1
+|0 | 0 | 0 | 0 | 1 | 1 | zero
 |0 | 0 | 0 | 1 | 1 | 0 | A minus B
+|0 | 1 | 0 | 0 | 1 | 1 | all ones
 |0 | 1 | 1 | 0 | 0 | 1 | A plus B
 |0 | 1 | 1 | 1 | 0 | 0 | A plus A _[left shift]_
 |0 | 1 | 1 | 1 | 1 | 1 | A minus 1
@@ -43,15 +55,12 @@ Note that the ALU result is a read-only register.
 |1 | x | 1 | 1 | 1 | 0 | A or B
 |====
 
-The B operation is not used by a standalone instruction, but the ALU functionality of it
-was used by the CALL instruction so that B can be used for temporary storage.  The B
-register was later redesigned to add its own bus transceiver to allow direct read access.
+The ALU all-zero bits and all-one bits operations are used in the microcode to get zeros
+or ones onto the bus for the flag set and clear operations.
 
-The ALU also has an all-zero bits operation and an all-one bits operation that may be
-useful.  While there isn't a good application for these as user-accessible instructions,
-they might be helpful in the microcode to get all zeros or all ones onto the bus.  For
-example, a single-byte CLR instruction could leverage all-zero to implement a register
-clear that would be faster and more compact that using a load immediate 0 instruction.
+The B operation is no longer used.  It was used by the CALL instruction to read B for
+temporary storage.  The B register was later redesigned to add its own bus transceiver to
+allow direct read access.
 
 ## Flags
 

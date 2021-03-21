@@ -54,6 +54,7 @@ class SpecificInstructionRecord:
         self.isAlu = row['ALU'].strip().lower() == 'y'
         self.bytes = row['Bytes'].strip()
         self.cycles = row['Cycles'].strip()
+        self.isBold = row['Bold'].strip().lower() == 'y'
 
     def __str__(self):
         return "{} {} {} {} {} {} {} {}".format(self.instance, self.mode, self.name, self.opcode, self.description, self.isAlu, self.bytes, self.cycles)
@@ -86,6 +87,12 @@ def detailsLink(name):
         # This is a specific instruction in the form AX_LDA.  Write the specific as the
         # printable text, but use the general instruction for the link.
     linkName = name[3:6] if len(name) == 6 else name
+
+    # TODO: Hack!
+    if len(name) == 6:
+        if instructions[linkName].specifics[name[0:2]].isBold:
+            name = '**'+name+'**'
+
     return "[{}](../{}#{})".format(name, detailName, linkName.lower())
 
 groupNames = {
@@ -103,8 +110,8 @@ groupNames = {
     'b': 'Indexed Indirect (X) - ALU Logic',
     'c': 'Indirect Indexed (Y) - ALU Arithmetic',
     'd': 'Indirect+Y - ALU Logic',
-    'e': 'unused',
-    'f': 'unused'
+    'e': 'Misc',
+    'f': 'Misc'
 }
 
 addressModes = {
@@ -122,10 +129,12 @@ addressModes = {
 
 addressOrder = [ 'IP', 'AA', 'IM', 'RE', 'AB', 'AX', 'AY', 'IN', 'IX', 'IY']
 
-opcodeGroups = [ 'P/A/R/N', 'Immediate', 'Absolute', 'Absolute+X', 'Absolute+Y', 'Indexed Indirect (X)', 'Indirect Indexed (Y)', 'NONE' ]
+opcodeGroups = [ 'P/A/R/N', 'Immediate', 'Absolute', 'Absolute+X', 'Absolute+Y', 'Indexed Indirect (X)', 'Indirect Indexed (Y)', 'Misc' ]
 
 aluOperations = {
     '00': 'A plus 1',
+    '03': 'zero/ones',
+    '05': 'A minus B *',
     '06': 'A minus B',
     '09': 'A plus B',
     '0c': 'A plus A',
@@ -186,7 +195,7 @@ def makeEnums(filename):
         f.write("// Instruction opcodes.  Those marked with an asterisk use the ALU and thus must have\n")
         f.write("// specific opcodes that match the bits that are hardwired from the IR to the ALU control.\n")
         f.write('enum {')
-        lastGroup =''
+        lastGroup = ''
         for opcode in sorted(opcodes):
             si = opcodes[opcode]
             group = opcode[2:3]
@@ -198,6 +207,26 @@ def makeEnums(filename):
             else:
                 comment = si.description
             f.write("    {} = {},  // {}\n".format(si.instance, opcode, comment))
+        f.write('};\n')
+
+def makeOpcodes(filename):
+    print "writing", filename
+    with open(filename, 'w') as f:
+        f.write("// Opcode comments - aid in verification of microcode tables\n")
+
+        for x in range(0, 256):
+            opcode = hex2(x)
+            si = opcodes.get('0x' + opcode)
+            if not si:
+                f.write("    // {}\n".format(opcode))
+            else:
+                if si.isAlu:
+                    comment = '*'
+                else:
+                    comment = ''
+                if si.cycles == 'x':
+                    comment += '$'
+                f.write("    // {} {} {} {}\n".format(opcode, si.instance, comment, si.cycles))
         f.write('};\n')
 
 def writeInstructionTable(f, iList, notes, title):
@@ -362,7 +391,7 @@ def makeInstructionsByModeGroup(filename):
     print "writing", filename
     hex = '0123456789abcdef'
     with open(filename, 'w') as f:
-        writeFileHeader(f, 'NQSAP Instructions by Adddress Mode Group', 'in-by-mode-group','NQSAP Computer Instructions by Address Mode Group')
+        writeFileHeader(f, 'NQSAP Instructions by Address Mode Group', 'in-by-mode-group','NQSAP Computer Instructions by Address Mode Group')
         f.write('|      |')
         for col in range(0, 8):
             f.write('{:1}<br />{:02x},{:02x}  |'.format(opcodeGroups[col], col * 0x20, col * 0x20 + 0x10))
@@ -405,6 +434,8 @@ with open(generalFile, 'rb') as inFile:
     for row in reader:
         rows += 1
         gi = GeneralInstructionRecord(row, rows)
+        if instructions.get(gi.name):
+            print "Duplicate instruction", gi
         instructions[gi.name] = gi
 
 #
@@ -416,6 +447,8 @@ with open(specificFile, 'rb') as inFile:
     for row in reader:
         rows += 1
         si = SpecificInstructionRecord(row, rows)
+        if opcodes.get(si.opcode):
+            print "Duplicate opcode", si
         opcodes[si.opcode] = si
         #print insta
         if si.name in instructions:
@@ -432,7 +465,8 @@ for name in sorted(instructions):
         print "Supported instruction with no specific instructions", gi
     elif gi.specifics and not gi.isNqsap:
         print "Unsupported instruction with specific instructions", name
-    # Put the instructions modes in order
+
+    # Put the instruction's modes in order
     orderedModes = []
     for m in addressOrder:
         if m in gi.modes:
@@ -440,6 +474,7 @@ for name in sorted(instructions):
     gi.modes = orderedModes
 
 makeEnums('in-enums.cpp')
+makeOpcodes('in-opcodes.cpp')
 makeInstructionSummaries('../_docs/in-10-summary.md')
 makeInstructionDetails('../_docs/in-20-details.md')
 makeInstructionsByOpcode('../_docs/in-30-by-opcode.md')

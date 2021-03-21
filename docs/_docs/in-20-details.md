@@ -11,9 +11,9 @@ excerpt: "Instruction set for the NQSAP Computer"
 |[CPY](#cpy)|[DEA](#dea)|[DEC](#dec)|[DEX](#dex)|[DEY](#dey)|[EOR](#eor)|[INA](#ina)|[INC](#inc)|
 |[INX](#inx)|[INY](#iny)|[JCC](#jcc)|[JCS](#jcs)|[JEQ](#jeq)|[JMI](#jmi)|[JMP](#jmp)|[JNE](#jne)|
 |[JPL](#jpl)|[JSR](#jsr)|[JVC](#jvc)|[JVS](#jvs)|[LDA](#lda)|[LDX](#ldx)|[LDY](#ldy)|[LSR](#lsr)|
-|[NOP](#nop)|[NOT](#not)|[ORA](#ora)|[OUT](#out)|[PHA](#pha)|[PLA](#pla)|[ROL](#rol)|[ROR](#ror)|
-|[RTS](#rts)|[SBC](#sbc)|[SEC](#sec)|[STA](#sta)|[STX](#stx)|[STY](#sty)|[TAX](#tax)|[TAY](#tay)|
-|[TSX](#tsx)|[TXA](#txa)|[TXS](#txs)|[TYA](#tya)|
+|[NOP](#nop)|[NOT](#not)|[ORA](#ora)|[OUT](#out)|[PHA](#pha)|[PHP](#php)|[PLA](#pla)|[PLP](#plp)|
+|[ROL](#rol)|[ROR](#ror)|[RTS](#rts)|[SBC](#sbc)|[SEC](#sec)|[STA](#sta)|[STX](#stx)|[STY](#sty)|
+|[TAX](#tax)|[TAY](#tay)|[TSX](#tsx)|[TXA](#txa)|[TXS](#txs)|[TYA](#tya)|
 
 ## ADC
 
@@ -55,7 +55,7 @@ Arithmetic Shift Left
 :--- |:---: |:---:|:---: |
 |AA - Accumulator|0x0c|1|3|
 |AB - Absolute|0x4c|1|7|
-|AX - Absolute+X|0x6c|1|x|
+|AX - Absolute+X|0x6c|1|8|
 
 ## BCC
 
@@ -65,7 +65,7 @@ Branch if Carry Clear
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0x2a|2|8|
+|RE - Relative|0x1c|2|8|
 
 ## BCS
 
@@ -75,7 +75,7 @@ Branch if Carry Set
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0x2b|2|8|
+|RE - Relative|0x3c|2|8|
 
 ## BEQ
 
@@ -85,7 +85,7 @@ Branch if Equal
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0x6b|2|8|
+|RE - Relative|0x7c|2|8|
 
 ## BIT
 
@@ -105,7 +105,7 @@ Branch if Minus
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0x8b|2|8|
+|RE - Relative|0xfc|2|8|
 
 ## BNE
 
@@ -115,7 +115,7 @@ Branch if Not Equal
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0x6a|2|8|
+|RE - Relative|0x5c|2|8|
 
 ## BPL
 
@@ -125,7 +125,7 @@ Branch if Positive
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0x8a|2|8|
+|RE - Relative|0xdc|2|8|
 
 ## BVC
 
@@ -135,7 +135,7 @@ Branch if Overflow Clear
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0xaa|2|8|
+|RE - Relative|0x9c|2|8|
 
 ## BVS
 
@@ -145,7 +145,7 @@ Branch if Overflow Set
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|RE - Relative|0xab|2|8|
+|RE - Relative|0xbc|2|8|
 
 ## CLC
 
@@ -155,7 +155,7 @@ Clear Carry
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x17|1|x|
+|IP - Implicit|0x03|1|3|
 
 ## CLV
 
@@ -165,7 +165,7 @@ Clear Overflow
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x57|1|x|
+|IP - Implicit|0x43|1|3|
 
 ## CMP
 
@@ -175,12 +175,12 @@ Compare A
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IM - Immediate|0x31|2|x|
-|AB - Absolute|0x51|2|x|
-|AX - Absolute+X|0x71|2|x|
-|AY - Absolute+Y|0x91|2|x|
-|IX - Indexed Indirect (X)|0xb1|2|x|
-|IY - Indirect Indexed (Y)|0xd1|2|x|
+|IM - Immediate|0x27|2|5|
+|AB - Absolute|0x47|2|6|
+|AX - Absolute+X|0x67|2|7|
+|AY - Absolute+Y|0x87|2|7|
+|IX - Indexed Indirect (X)|0xa7|2|8|
+|IY - Indirect Indexed (Y)|0xc7|2|8|
 
 ## CPX
 
@@ -190,8 +190,8 @@ Compare X
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IM - Immediate|0x32|2|x|
-|AB - Absolute|0x52|2|x|
+|IM - Immediate|0x06|2|7|
+|AB - Absolute|0xe6|2|8|
 
 ## CPY
 
@@ -201,8 +201,8 @@ Compare Y
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IM - Immediate|0x33|2|x|
-|AB - Absolute|0x53|2|x|
+|IM - Immediate|0x07|2|7|
+|AB - Absolute|0xe7|2|8|
 
 ## DEA
 
@@ -309,7 +309,7 @@ Jump if Carry Clear
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xb7|2|4|
+|AB - Absolute|0x1d|2|4|
 
 ## JCS
 
@@ -319,7 +319,7 @@ Jump if Carry Set
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xd7|2|4|
+|AB - Absolute|0x3d|2|4|
 
 ## JEQ
 
@@ -329,7 +329,7 @@ Jump if Equal
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xd8|2|4|
+|AB - Absolute|0x7d|2|4|
 
 ## JMI
 
@@ -339,7 +339,7 @@ Jump if Minus
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xd9|2|4|
+|AB - Absolute|0xfd|2|4|
 
 ## JMP
 
@@ -360,7 +360,7 @@ Jump if Not Equal
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xb8|2|4|
+|AB - Absolute|0x5d|2|4|
 
 ## JPL
 
@@ -370,7 +370,7 @@ Jump if Positive
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xb9|2|4|
+|AB - Absolute|0xdd|2|4|
 
 ## JSR
 
@@ -390,7 +390,7 @@ Jump if Overflow Clear
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xba|2|4|
+|AB - Absolute|0x9d|2|4|
 
 ## JVS
 
@@ -400,7 +400,7 @@ Jump if Overflow Set
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0xda|2|4|
+|AB - Absolute|0xbd|2|4|
 
 ## LDA
 
@@ -425,9 +425,9 @@ Load X
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IM - Immediate|0x24|2|4|
-|AB - Absolute|0x44|2|5|
-|AY - Absolute+Y|0x84|2|6|
+|IM - Immediate|0x31|2|4|
+|AB - Absolute|0x51|2|5|
+|AY - Absolute+Y|0x91|2|6|
 
 ## LDY
 
@@ -437,9 +437,9 @@ Load Y
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IM - Immediate|0x27|2|4|
-|AB - Absolute|0x47|2|5|
-|AX - Absolute+X|0x67|2|6|
+|IM - Immediate|0x33|2|4|
+|AB - Absolute|0x53|2|5|
+|AX - Absolute+X|0x73|2|6|
 
 ## LSR
 
@@ -461,7 +461,7 @@ No Operation
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x00|1|2|
+|IP - Implicit|0x00|1|3|
 
 ## NOT
 
@@ -508,6 +508,16 @@ Push A
 :--- |:---: |:---:|:---: |
 |IP - Implicit|0x16|1|4|
 
+## PHP
+
+Push Processor Status
+
+**Flags:** ----
+
+|Mode|Opcode|Bytes|Cycles|
+:--- |:---: |:---:|:---: |
+|IP - Implicit|0x09|1|4|
+
 ## PLA
 
 Pull A
@@ -517,6 +527,16 @@ Pull A
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
 |IP - Implicit|0x1e|1|5|
+
+## PLP
+
+Pull Processor Status
+
+**Flags:** ----
+
+|Mode|Opcode|Bytes|Cycles|
+:--- |:---: |:---:|:---: |
+|IP - Implicit|0x0f|1|5|
 
 ## ROL
 
@@ -575,7 +595,7 @@ Set Carry
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x37|1|x|
+|IP - Implicit|0x23|1|3|
 
 ## STA
 
@@ -599,8 +619,8 @@ Store X
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0x45|2|5|
-|AY - Absolute+Y|0x85|2|6|
+|AB - Absolute|0x52|2|5|
+|AY - Absolute+Y|0x92|2|6|
 
 ## STY
 
@@ -610,8 +630,8 @@ Store Y
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|AB - Absolute|0x48|2|5|
-|AX - Absolute+X|0x68|2|6|
+|AB - Absolute|0x54|2|5|
+|AX - Absolute+X|0x74|2|6|
 
 ## TAX
 
@@ -621,7 +641,7 @@ Transfer A to X
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x64|1|3|
+|IP - Implicit|0x71|1|3|
 
 ## TAY
 
@@ -631,7 +651,7 @@ Transfer A to Y
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x87|1|3|
+|IP - Implicit|0x93|1|3|
 
 ## TSX
 
@@ -641,7 +661,7 @@ Transfer SP to X
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0xa4|1|3|
+|IP - Implicit|0xb1|1|3|
 
 ## TXA
 
@@ -651,7 +671,7 @@ Transfer X to A
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x65|1|3|
+|IP - Implicit|0x72|1|3|
 
 ## TXS
 
@@ -661,7 +681,7 @@ Transfer X to SP
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0xa5|1|3|
+|IP - Implicit|0xb2|1|3|
 
 ## TYA
 
@@ -671,7 +691,7 @@ Transfer Y to A
 
 |Mode|Opcode|Bytes|Cycles|
 :--- |:---: |:---:|:---: |
-|IP - Implicit|0x88|1|3|
+|IP - Implicit|0x94|1|3|
 
 
-*this file was generated by nqsap-instructions.py at 12-Dec-2020 14:06:16*
+*this file was generated by nqsap-instructions.py at 30-Dec-2020 12:27:09*

@@ -122,6 +122,24 @@ the current value of the Carry flag.  Note that the ALU uses negative logic for 
 flag, so the inverted value of the Carry flag is used.  The inverter is placed after the
 LC and LS logic, so asserting LS will present a zero to the ALU and LC will present a one.
 
+## Control ROM Summary
+
+The table below shows the Control ROM lines are related to flags.
+
+|Signal|Description             |
+|:---: |:---                    |
+| FC   | write Carry flag       |
+| FZ   | write Zero flag        |
+| FV   | write oVerflow flag    |
+| FN   | write Negative flag    |
+| FB   | load flags from the bus|
+| JC   | jump conditional       |
+| C0   | carry source select 0  |
+| C1   | carry source select 1  |
+| LC   | ALU carry input clear  |
+| LC   | ALU carry input clear  |
+|====
+
 ## Other References
 
 [Question for all 74ls181 alu people](https://www.reddit.com/r/beneater/comments/kmuuex/question_for_all_74ls181_alu_people)

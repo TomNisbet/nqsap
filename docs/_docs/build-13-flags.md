@@ -67,15 +67,18 @@ lines from the ROM would be replaced with bits from the IR.
 The Negative flag is simply the MSB of the data bus.
 
 The Zero flag uses an 8-bit comparator to test for zero.  This saves a chip over the
-AND/OR circuit used in the Ben Eater computer, but is functionally equivalent.
+AND/OR circuit used in the Ben Eater SAP-1 computer but is functionally equivalent.  One
+other difference from the SAP-1 is that the zero test is performed on the value on the bus
+value instead of the output value of the ALU. This allows the Zero flag to be set for
+non-ALU operations such as register to register transfers.
 
 The oVerflow flag is calculated using a 74LS151 8-to-1 selector as described in
 [74181 with V_Flag](http://6502.org/users/dieter/v_flag/v_4.htm) on 6502.org.
 
 The Carry flag has several inputs that can set it.  For arithmetic operations, it uses the
 carry output of the 74LS181 ALU chip.  For shift operations, it is set by the LSB or the
-MSB value of the H register.  Another of the ever-present 74LS151s chooses from the different inputs as
-selected by the C0 and C1 bits from the control ROMs.
+MSB value of the H register.  Another of the ever-present 74LS151s chooses from the
+different inputs as selected by the C0 and C1 bits from the control ROMs.
 
 Any or all of the flags can also be loaded from the bus.  This allows for a "pull flags"
 instruction to restore the set of flags.  This capability is also leveraged for the
@@ -86,15 +89,15 @@ or cleared by the microcode.
 
 ## Carry Flag Usage by the ALU and H Register
 
-In addition to its use in the conditional jump instructions, the Carry Flag is also used
+In addition to its use in the conditional jump instructions, the Carry flag is also used
 as an input to the ALU (L) and the sHift (H) Register.  Depending on the operation, the
 carry supplied to the ALU and H registers can be either a hard-coded one or zero, the
-value of the Carry Flag, or the inverted value of the Carry Flag.  The inversion is needed
-because the Carry Flag uses positive logic, with a one indicating a carry is present, but
+value of the Carry flag, or the inverted value of the Carry flag.  The inversion is needed
+because the Carry flag uses positive logic, with a one indicating a carry is present, but
 the ALU uses negative logic, where a zero indicates that a carry should be used in the
 operation being performed.  
 
-The new value of the Carry Flag after an instruction also varies by instruction.  Its
+The new value of the Carry flag after an instruction also varies by instruction.  Its
 value may came from either the ALU or the H register.  In addition, the CLC and SEC
 instructions can explicitly clear the flag using a value from the bus.
 
@@ -102,16 +105,22 @@ The table below shows the usage of the carry flag for each instruction.
 
 | Operation|Register|Input to Register|Input to Carry Flag|
 |:---:     |:---:   |:---:            |:---:              |
-| ADC      | ALU    | ~C              | ~L-carry-out      |
+| ADC      | ALU    | ~C              | ~ALU-carry-out    |
 | ASL      | H      | 0               | H<sub>7</sub>     |
 | DEC      | ALU    | 1               | flag not changed  |
 | INC      | ALU    | 0               | flag not changed  |
 | LSR      | H      | 0               | H<sub>0</sub>     |
-| ROL      | H      | C               | H<sub>0</sub>     |
+| ROL      | H      | C               | H<sub>7</sub>     |
 | ROR      | H      | C               | H<sub>0</sub>     |
-| SBC      | ALU    | ~C              | ~L-carry-out      |
+| SBC      | ALU    | ~C              | ~ALU-carry-out    |
 |====
 
+The input to the Carry flag is described above in the Flag Calculations section.  The
+output of the Carry flag to the ALU and H register is controlled by the LC and LS lines
+from the Control ROM.  These two lines can force a clear or set value or just pass through
+the current value of the Carry flag.  Note that the ALU uses negative logic for the carry
+flag, so the inverted value of the Carry flag is used.  The inverter is placed after the
+LC and LS logic, so asserting LS will present a zero to the ALU and LC will present a one.
 
 ## Other References
 

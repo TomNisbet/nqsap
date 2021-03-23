@@ -74,7 +74,7 @@ The oVerflow flag is calculated using a 74LS151 8-to-1 selector as described in
 
 The Carry flag has several inputs that can set it.  For arithmetic operations, it uses the
 carry output of the 74LS181 ALU chip.  For shift operations, it is set by the LSB or the
-MSB value of the H register.  An ever-present 74LS151 chooses from the different inputs as
+MSB value of the H register.  Another of the ever-present 74LS151s chooses from the different inputs as
 selected by the C0 and C1 bits from the control ROMs.
 
 Any or all of the flags can also be loaded from the bus.  This allows for a "pull flags"
@@ -83,6 +83,35 @@ individual flag set and clear instructions, like CLC, CLV, and SEC.  The ALU chi
 operation that puts all ones on the bus and another that puts out all zeroes.  By putting
 the ALU in one of these modes and enabling individual flag load lines, a flag can be set
 or cleared by the microcode.
+
+## Carry Flag Usage by the ALU and H Register
+
+In addition to its use in the conditional jump instructions, the Carry Flag is also used
+as an input to the ALU (L) and the sHift (H) Register.  Depending on the operation, the
+carry supplied to the ALU and H registers can be either a hard-coded one or zero, the
+value of the Carry Flag, or the inverted value of the Carry Flag.  The inversion is needed
+because the Carry Flag uses positive logic, with a one indicating a carry is present, but
+the ALU uses negative logic, where a zero indicates that a carry should be used in the
+operation being performed.  
+
+The new value of the Carry Flag after an instruction also varies by instruction.  Its
+value may came from either the ALU or the H register.  In addition, the CLC and SEC
+instructions can explicitly clear the flag using a value from the bus.
+
+The table below shows the usage of the carry flag for each instruction.
+
+| Operation|Register|Input to Register|Input to Carry Flag|
+|:---:     |:---:   |:---:            |:---:              |
+| ADC      | ALU    | ~C              | ~L-carry-out      |
+| ASL      | H      | 0               | H<sub>7</sub>     |
+| DEC      | ALU    | 1               | flag not changed  |
+| INC      | ALU    | 0               | flag not changed  |
+| LSR      | H      | 0               | H<sub>0</sub>     |
+| ROL      | H      | C               | H<sub>0</sub>     |
+| ROR      | H      | C               | H<sub>0</sub>     |
+| SBC      | ALU    | ~C              | ~L-carry-out      |
+|====
+
 
 ## Other References
 

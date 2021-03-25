@@ -50,6 +50,10 @@ The star of this design is the 74LS151 8-to-1 selector.  It is used to replace c
 logic for the Carry and oVerflow flag calculations and also to select a flag source for
 the conditional jump.
 
+The gates at the bottom of the drawing that generate the B-CLK and ALU-S0 signals are not
+part of the flags design but they use some of the spare logic gates.  These will likely be
+moved to other pages as more schematics are drawn.
+
 ## Flag Registers
 
 Each of the four flags is stored in its own D flip flop rather than a single register chip

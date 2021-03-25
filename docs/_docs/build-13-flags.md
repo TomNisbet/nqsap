@@ -167,7 +167,7 @@ just pass it through unchanged.  The initial design used three different types o
 but applying De Morgan to the AND gate simplified the design to just two NOR gates.  The
 two versions of the circuit are shown below.
 
-[![Carry Flag Output](../../assets/images/flags-carry-output.png "carry flag output logic"){:width="400px"}](../../assets/images/flags-carry-output.png)
+[![Carry Flag Output](../../assets/images/flags-carry-output.png "carry flag output logic"){:width="600px"}](../../assets/images/flags-carry-output.png)
 
 The input value to the Carry flag after an instruction also varies by instruction.  Its
 value may came from either the ALU or the H register.  In addition, the CLC and SEC

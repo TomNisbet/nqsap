@@ -15,8 +15,8 @@ AA_LSR,0x18,logical shift left,y,1,4,
 AA_ROL,0x19,rotate left thru carry,n,1,4,
 AA_ROR,0x1a,rotate right thru carry,n,1,4,
 AB_BIT,0x1b,bit test A with memory,y,2,5,
-RE_BCC,0x1c,branch on carry clear,n,2,8,y
-AB_JCC,0x1d,jump if carry clear,n,2,4,y
+RE_BCS,0x1c,branch if carry set,n,2,8,y
+AB_JCS,0x1d,jump if carry set,n,2,4,y
 IP_PLA,0x1e,pull A,n,1,5,
 AA_INA,0x20,increment A,y,1,3,
 IM_LDA,0x21,load immediate to A,n,2,4,
@@ -29,8 +29,8 @@ IM_LDX,0x31,load immediate to X,n,2,4,y
 IM_LDY,0x33,load immediate to Y,n,2,4,y
 IM_EOR,0x36,XOR A,y,2,5,
 IM_AND,0x3b,AND A,y,2,5,
-RE_BCS,0x3c,branch on carry set,n,2,8,y
-AB_JCS,0x3d,jump if carry set,n,2,4,y
+RE_BCC,0x3c,branch if carry clear,n,2,8,y
+AB_JCC,0x3d,jump if carry clear,n,2,4,y
 IM_ORA,0x3e,OR A,y,2,5,
 AB_INC,0x40,increment memory,y,2,7,
 AB_LDA,0x41,load A from memory,n,2,5,
@@ -52,8 +52,8 @@ AB_LSR,0x58,logical shift right memory,n,2,8,
 AB_ROL,0x59,rotate left thru carry memory,n,2,8,
 AB_ROR,0x5a,rotate right thru carry memory,n,2,8,
 AB_AND,0x5b,AND A,y,2,6,
-RE_BNE,0x5c,branch if not equal (zero clear),n,2,8,y
-AB_JNE,0x5d,jump if not equal (zero clear),n,2,4,y
+RE_BEQ,0x5c,branch if equal (zero set),n,2,8,y
+AB_JEQ,0x5d,jump if equal (zero set),n,2,4,y
 AB_ORA,0x5e,OR A,y,2,6,
 AX_INC,0x60,increment memory,y,2,8,
 AX_LDA,0x61,load A from memory,n,2,6,
@@ -72,8 +72,8 @@ AX_LSR,0x78,logical shift right memory,n,2,x,
 AX_ROL,0x79,rotate left thru carry memory,n,2,x,
 AX_ROR,0x7a,rotate right thru carry memory,n,2,x,
 AX_AND,0x7b,AND A,y,2,7,
-RE_BEQ,0x7c,branch if equal (zero set),n,2,8,y
-AB_JEQ,0x7d,jump if equal (zero set),n,2,4,y
+RE_BNE,0x7c,branch if not equal (zero clear),n,2,8,y
+AB_JNE,0x7d,jump if not equal (zero clear),n,2,4,y
 AX_ORA,0x7e,OR A,y,2,7,
 AY_LDA,0x81,load A from memory,n,2,6,
 AY_STA,0x82,store A to memory,n,2,6,
@@ -86,8 +86,8 @@ IP_TAY,0x93,transfer A to Y,n,1,3,y
 IP_TYA,0x94,transfer Y to A,n,1,3,y
 AY_EOR,0x96,exlcusive OR A,y,2,7,
 AY_AND,0x9b,AND A,y,2,7,
-RE_BVC,0x9c,branch if overflow clear,n,2,8,y
-AB_JVC,0x9d,jump if overflow clear,n,2,4,y
+RE_BVS,0x9c,branch if overflow set,n,2,8,y
+AB_JVS,0x9d,jump if overflow set,n,2,4,y
 AY_ORA,0x9e,OR A,y,2,7,
 IP_INX,0xa0,increment X,y,1,6,
 IX_LDA,0xa1,load A from memory,n,2,7,
@@ -100,8 +100,8 @@ IP_TSX,0xb1,transfer SP to X,n,1,3,y
 IP_TXS,0xb2,transfer X to SP,n,1,3,y
 IX_EOR,0xb6,exlcusive OR A,y,2,8,
 IX_AND,0xbb,AND A,y,2,8,
-RE_BVS,0xbc,branch if overflow set,n,2,8,y
-AB_JVS,0xbd,jump if overflow set,n,2,4,y
+RE_BVC,0xbc,branch if overflow clear,n,2,8,y
+AB_JVC,0xbd,jump if overflow clear,n,2,4,y
 IX_ORA,0xbe,OR A,y,2,8,
 IP_INY,0xc0,increment Y,y,1,6,
 IY_LDA,0xc1,load A from memory,n,2,7,
@@ -112,10 +112,10 @@ IY_ADC,0xc9,add with carry memory,y,2,8,
 IP_DEY,0xcf,decrement Y,y,1,6,
 IY_EOR,0xd6,exlcusive OR A,y,2,8,
 IY_AND,0xdb,AND A,y,2,8,
-RE_BPL,0xdc,branch if plus (minus clear),n,2,8,y
-AB_JPL,0xdd,jump if plus (minus clear),n,2,4,y
+RE_BMI,0xdc,branch if plus (negative set),n,2,8,y
+AB_JMI,0xdd,jump if plus (negative set),n,2,4,y
 IY_ORA,0xde,OR A,y,2,8,
 AB_CPX,0xe6,compare X,y,2,8,y
 AB_CPY,0xe7,compare Y,y,2,8,y
-RE_BMI,0xfc,branch if minus (minus set),n,2,8,y
-AB_JMI,0xfd,jump if minus (minus set),n,2,4,y
+RE_BPL,0xfc,branch if plus (negative clear),n,2,8,y
+AB_JPL,0xfd,jump if plus (negative clear),n,2,4,y

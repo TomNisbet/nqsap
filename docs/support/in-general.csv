@@ -49,7 +49,7 @@ OUT,Output A,,n,y,,,Transfer the accumulator to the output register to display i
 PHA,Push A,,y,y,,,Push accumulator on to the stack.  SP is decremented.
 PHP,Push Processor Status,,y,y,n,,Push processor status (flags) on to the stack.  SP is decremented.
 PLA,Pull A,ZN,y,y,,zn,Pull accumulator from the stack.  SP is incremented.
-PLP,Pull Processor Status,,y,y,n,,Pull processor status (flags) from the stack.  SP is incremented.
+PLP,Pull Processor Status,CZVN,y,y,n,,Pull processor status (flags) from the stack.  SP is incremented.
 ROL,Rotate Left,CZN,y,y,n,shift,Rotate memory or accumulator on bit left.  The carry flag is shifted into the LSB and the MSB is shifted into the carry flag.
 ROR,Rotate Right,CZN,y,y,n,shift,Rotate memory or accumulator on bit right.  The carry flag is shifted into the MSB and the LSB is shifted into the carry flag.
 RTI,Return from Interrupt,,y,n,,interrupts,

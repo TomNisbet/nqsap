@@ -20,8 +20,8 @@ enum {
     AA_ROL = 0x19,  // rotate left thru carry
     AA_ROR = 0x1a,  // rotate right thru carry
     AB_BIT = 0x1b,  // * bit test A with memory
-    RE_BCC = 0x1c,  // branch on carry clear
-    AB_JCC = 0x1d,  // jump if carry clear
+    RE_BCS = 0x1c,  // branch if carry set
+    AB_JCS = 0x1d,  // jump if carry set
     IP_PLA = 0x1e,  // pull A
 
     // 20 - 2f   Immediate - ALU Arithmetic
@@ -38,8 +38,8 @@ enum {
     IM_LDY = 0x33,  // load immediate to Y
     IM_EOR = 0x36,  // * XOR A
     IM_AND = 0x3b,  // * AND A
-    RE_BCS = 0x3c,  // branch on carry set
-    AB_JCS = 0x3d,  // jump if carry set
+    RE_BCC = 0x3c,  // branch if carry clear
+    AB_JCC = 0x3d,  // jump if carry clear
     IM_ORA = 0x3e,  // * OR A
 
     // 40 - 4f   Absolute - ALU Arithmetic
@@ -65,8 +65,8 @@ enum {
     AB_ROL = 0x59,  // rotate left thru carry memory
     AB_ROR = 0x5a,  // rotate right thru carry memory
     AB_AND = 0x5b,  // * AND A
-    RE_BNE = 0x5c,  // branch if not equal (zero clear)
-    AB_JNE = 0x5d,  // jump if not equal (zero clear)
+    RE_BEQ = 0x5c,  // branch if equal (zero set)
+    AB_JEQ = 0x5d,  // jump if equal (zero set)
     AB_ORA = 0x5e,  // * OR A
 
     // 60 - 6f   Absolute+X - ALU Arithmetic
@@ -89,8 +89,8 @@ enum {
     AX_ROL = 0x79,  // rotate left thru carry memory
     AX_ROR = 0x7a,  // rotate right thru carry memory
     AX_AND = 0x7b,  // * AND A
-    RE_BEQ = 0x7c,  // branch if equal (zero set)
-    AB_JEQ = 0x7d,  // jump if equal (zero set)
+    RE_BNE = 0x7c,  // branch if not equal (zero clear)
+    AB_JNE = 0x7d,  // jump if not equal (zero clear)
     AX_ORA = 0x7e,  // * OR A
 
     // 80 - 8f   Absolute+Y - ALU Arithmetic
@@ -107,8 +107,8 @@ enum {
     IP_TYA = 0x94,  // transfer Y to A
     AY_EOR = 0x96,  // * exlcusive OR A
     AY_AND = 0x9b,  // * AND A
-    RE_BVC = 0x9c,  // branch if overflow clear
-    AB_JVC = 0x9d,  // jump if overflow clear
+    RE_BVS = 0x9c,  // branch if overflow set
+    AB_JVS = 0x9d,  // jump if overflow set
     AY_ORA = 0x9e,  // * OR A
 
     // a0 - af   Indexed Indirect (X) - ALU Arithmetic
@@ -125,8 +125,8 @@ enum {
     IP_TXS = 0xb2,  // transfer X to SP
     IX_EOR = 0xb6,  // * exlcusive OR A
     IX_AND = 0xbb,  // * AND A
-    RE_BVS = 0xbc,  // branch if overflow set
-    AB_JVS = 0xbd,  // jump if overflow set
+    RE_BVC = 0xbc,  // branch if overflow clear
+    AB_JVC = 0xbd,  // jump if overflow clear
     IX_ORA = 0xbe,  // * OR A
 
     // c0 - cf   Indirect Indexed (Y) - ALU Arithmetic
@@ -141,8 +141,8 @@ enum {
     // d0 - df   Indirect+Y - ALU Logic
     IY_EOR = 0xd6,  // * exlcusive OR A
     IY_AND = 0xdb,  // * AND A
-    RE_BPL = 0xdc,  // branch if plus (minus clear)
-    AB_JPL = 0xdd,  // jump if plus (minus clear)
+    RE_BMI = 0xdc,  // branch if plus (negative set)
+    AB_JMI = 0xdd,  // jump if plus (negative set)
     IY_ORA = 0xde,  // * OR A
 
     // e0 - ef   Misc
@@ -150,6 +150,6 @@ enum {
     AB_CPY = 0xe7,  // * compare Y
 
     // f0 - ff   Misc
-    RE_BMI = 0xfc,  // branch if minus (minus set)
-    AB_JMI = 0xfd,  // jump if minus (minus set)
+    RE_BPL = 0xfc,  // branch if plus (negative clear)
+    AB_JPL = 0xfd,  // jump if plus (negative clear)
 };

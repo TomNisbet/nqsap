@@ -275,16 +275,12 @@ and updating of individual flags rather than updating the entire flags register 
 The new design will also add new sources to the flag inputs so that, for example, the C
 flags can be updated by the shift/rotate instructions.
 
-A second redesign is planned for the A register to enable all of the shift and rotate
-functions of the 6502.  Currently, only ASL is supported because it can be done using the
-74LS181 ALU chip.
-
 The compare instructions are not implemented yet because they need the ALU to be in
 subtract mode.  The ALU operation select bits are hard-wired to the Instruction Register,
 so there are a limited number of opcodes that are available for each ALU operation.  The
 SBC instructions are using the subtract opcodes, so there is no room to implement the
 compate instructions.  A change will be made to allow the ALU select bits to be
-overridded to allow the compare instructions.  This is a fairly simple change, but may
+overridden to allow the compare instructions.  This is a fairly simple change, but may
 require shifting a few components to free up breadboard space.
 
 Some of the single operand memory instructions, like INC, DEC, and ASL are not available

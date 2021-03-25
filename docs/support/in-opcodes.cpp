@@ -27,8 +27,8 @@
     // 19 AA_ROL  4
     // 1a AA_ROR  4
     // 1b AB_BIT * 5
-    // 1c RE_BCC  8
-    // 1d AB_JCC  4
+    // 1c RE_BCS  8
+    // 1d AB_JCS  4
     // 1e IP_PLA  5
     // 1f
     // 20 AA_INA * 3
@@ -59,8 +59,8 @@
     // 39
     // 3a
     // 3b IM_AND * 5
-    // 3c RE_BCS  8
-    // 3d AB_JCS  4
+    // 3c RE_BCC  8
+    // 3d AB_JCC  4
     // 3e IM_ORA * 5
     // 3f
     // 40 AB_INC * 7
@@ -91,8 +91,8 @@
     // 59 AB_ROL  8
     // 5a AB_ROR  8
     // 5b AB_AND * 6
-    // 5c RE_BNE  8
-    // 5d AB_JNE  4
+    // 5c RE_BEQ  8
+    // 5d AB_JEQ  4
     // 5e AB_ORA * 6
     // 5f
     // 60 AX_INC * 8
@@ -123,8 +123,8 @@
     // 79 AX_ROL $ x
     // 7a AX_ROR $ x
     // 7b AX_AND * 7
-    // 7c RE_BEQ  8
-    // 7d AB_JEQ  4
+    // 7c RE_BNE  8
+    // 7d AB_JNE  4
     // 7e AX_ORA * 7
     // 7f
     // 80
@@ -155,8 +155,8 @@
     // 99
     // 9a
     // 9b AY_AND * 7
-    // 9c RE_BVC  8
-    // 9d AB_JVC  4
+    // 9c RE_BVS  8
+    // 9d AB_JVS  4
     // 9e AY_ORA * 7
     // 9f
     // a0 IP_INX * 6
@@ -187,8 +187,8 @@
     // b9
     // ba
     // bb IX_AND * 8
-    // bc RE_BVS  8
-    // bd AB_JVS  4
+    // bc RE_BVC  8
+    // bd AB_JVC  4
     // be IX_ORA * 8
     // bf
     // c0 IP_INY * 6
@@ -219,8 +219,8 @@
     // d9
     // da
     // db IY_AND * 8
-    // dc RE_BPL  8
-    // dd AB_JPL  4
+    // dc RE_BMI  8
+    // dd AB_JMI  4
     // de IY_ORA * 8
     // df
     // e0
@@ -251,8 +251,8 @@
     // f9
     // fa
     // fb
-    // fc RE_BMI  8
-    // fd AB_JMI  4
+    // fc RE_BPL  8
+    // fd AB_JPL  4
     // fe
     // ff
 };

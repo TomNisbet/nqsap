@@ -97,7 +97,12 @@ HR and HL signals.  Any other signals from ROM 2 that are not controlled by the 
 must have pull-up or pull-down resistors if they need to be in known states while the
 Loader is active.
 
+The Loader Active signal is also used to hold the Ring Counter in reset so that it does
+not cycle while the loader is driving the clock.
+
 ## Loader implementation
+
+[![Loader Schematic](../../assets/images/loader-schematic.png "loader/debugger schematic logic"){:width="720px"}](../../assets/images/loader-schematic.png)
 
 The loader uses an Arduino Nano clone.  The Nano form factor was chosen over the more
 common Uno because the small form factor can be installed directly on the breadboards with

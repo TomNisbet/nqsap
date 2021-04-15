@@ -41,6 +41,10 @@ reset inputs - the RST line is tied to the system RST to do an immediate clear w
 entire computer is reset and the LOAD line is tied to a control line from the uCode ROM to
 do a synchronous clear at the end of an instruction cycle.
 
+The wiring for the Ring Counter is included in the
+[Microcode ROMs schematic](../../assets/images/microcode-roms-schematic.png "microcode ROMs schematic")
+on the [Microcode ROMs and Control Logic](../control) documentation page.
+
 The NQSAP Ring Counter uses only two chips.  The 74LS161 is the 4-bit counter that keeps
 track of the current microinstruction step (T cycle).  The lower three bits of this
 counter drive the A0..A2 address lines of each microcode EEPROM.  

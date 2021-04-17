@@ -21,6 +21,14 @@ can be generated programmatically in the Arduino code.  Because the Mode and Sel
 are wired to the Instruction Register, only the Carry-in signal is connected to the
 microcode ROMs.
 
+[![NQSAP ALU schematic)](../../assets/images/alu-schematic.png "ALU schematic"){:width="400px"}](../../assets/images/alu-schematic.png)
+
+The inputs to the ALU are the sHift Register (H) and the B register.  Neither of these
+registers is visible to the user instructions, but that can be written and read by the
+microcode.  By convention, the H register always contains the same value as the A register
+at the end of an instruction, but it can be used independently by the microcode within
+an instruction.  All ALU instructions write their result to the A register.
+
 Note that the subtract and compare instructions both need the ALU to be in subtract mode.
 Because the ALU select lines are hard-wired to the IR, there are only eight opcodes
 available that put the ALU in the correct mode.  To create the sixteen different opcodes

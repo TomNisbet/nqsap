@@ -11,9 +11,9 @@ user-accessible registers and a set of new addressing modes.  The X and Y regist
 general-purpose registers that are also used as index registers. The D register is a
 temporary register and adder that is only accessible at the microcode level.
 
-With this new hardware, NQSAP is able to use a set of addressing modes similar to those
-found on a 6502.  The only difference is that the NQSAP does not have a sixteen-bit bus,
-so all of the absolute address modes are the same as the zero-page modes of the 6502.  The
+With this hardware, NQSAP is able to use a set of addressing modes similar to those found
+on a 6502.  The only difference is that the NQSAP does not have a sixteen-bit bus, so all
+of the absolute address modes are the same as the zero-page modes of the 6502.  The
 address modes available are:
 
 * implicit
@@ -26,6 +26,14 @@ address modes available are:
 * indirect
 * indexed indirect (with X)
 * indirect indexed (with Y)
+
+With adder hardware dedicated to addressing modes, ALU instructions that access memory can
+be implemented in fewer cycles.  Without the adder, the instruction _AND $40,X_ would need
+to use the ALU to calculate $40+X and then would need the ALU again to do the AND
+operation. This could be done in ten cycles and would need temporary storage to save the
+accumulator while doing the address calculation.  With the DXY register, the instruction
+can be implemented in only seven microinstructions, including the two for the opcode
+fetch.
 
 The D register can be added to either the X or Y register to produce a sum that can be
 read onto the bus.  The diagram below shows how the registers are connected.
@@ -40,6 +48,8 @@ eliminating the need for D to have its own output buffer.
 
 ## Hardware
 
+[![DXY Registers Design](../../assets/images/dxy-schematic.png "DXY registers and adder"){:width="400px"}](../../assets/images/dxy-schematic.png)
+
 The X and Y registers are each implemented using a 74HCT574 8-bit register and a 74HCT245
 8-bit bus transceiver.  The D register also uses the 574 register but it does not have the
 ability to write to the bus and does not have a transceiver. The X and Y register outputs
@@ -49,7 +59,8 @@ of 74LS283 4-bit adders. The outputs of the adders are connected to a 245 transc
 they can be placed on the bus.
 
 The select and output enable controls of the 2-to-1 selectors are connected to the
-microcode ROMs, allowing the source of one of the adder operands to be X, Y, or zero.
+microcode ROMs, allowing the source of one of the adder operands to be X, Y, or zero.  The
+other operand is always the contents of the D register.
 
 The three 74574 register chips do not have a load enable line, so a NOR gate is used with
 the write select and an inverted clock line to produce a rising edge to load the register
@@ -57,7 +68,6 @@ only when it is selected.  One gate of a quad NOR is used to invert the clock an
 other three are used to provide the write clocks for X, Y, and D.  See the
 [B Register documentation](../registers/#74574-write-signal) for a more details of the
 74574 clocking.
-
 
 ### Bill of Materials
 

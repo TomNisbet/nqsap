@@ -4,7 +4,7 @@ permalink: /docs/flags/
 excerpt: "Building the flags and conditional jump logic of the NQSAP computer"
 ---
 
-[![Flags Design](../../assets/images/flags-circuit.png "flags and jump logic"){:width="400px"}](../../assets/images/flags-circuit.png)
+[![Flags Design](../../assets/images/flags-schematic.png "flags and jump logic"){:width="400px"}](../../assets/images/flags-schematic.png)
 
 The processor status flags and conditional jump logic is the most complex part of the
 NQSAP computer.  It consumes a large number of the available

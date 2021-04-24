@@ -5,8 +5,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 7 7
 Title "NQSAP DXY Registers and Adder"
-Date "2021-04-18"
-Rev "1.1"
+Date "2021-04-23"
+Rev "1.2"
 Comp "github.com/TomNisbet"
 Comment1 ""
 Comment2 ""
@@ -17,10 +17,10 @@ $Comp
 L 74xx:74LS245 U704
 U 1 1 607AEEBA
 P 1700 2000
-F 0 "U704" H 1900 2750 50  0000 C CNN
-F 1 "74LS02" H 1950 2650 50  0000 C CNN
+F 0 "U704" H 1950 2800 50  0000 C CNN
+F 1 "74LS245" H 1950 2700 50  0000 C CNN
 F 2 "" H 1700 2000 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 1700 2000 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS245" H 1700 2000 50  0001 C CNN
 	1    1700 2000
 	1    0    0    -1  
 $EndComp
@@ -28,10 +28,10 @@ $Comp
 L 74xx:74LS245 U707
 U 1 1 607AFC24
 P 1700 4250
-F 0 "U707" H 1850 5050 50  0000 C CNN
-F 1 "74LS02" H 1900 4950 50  0000 C CNN
+F 0 "U707" H 1950 5050 50  0000 C CNN
+F 1 "74LS245" H 1950 4950 50  0000 C CNN
 F 2 "" H 1700 4250 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 1700 4250 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS245" H 1700 4250 50  0001 C CNN
 	1    1700 4250
 	1    0    0    -1  
 $EndComp
@@ -39,10 +39,10 @@ $Comp
 L 74xx:74LS245 U710
 U 1 1 607B0A23
 P 1700 6500
-F 0 "U710" H 1850 7300 50  0000 C CNN
-F 1 "74LS02" H 1950 7200 50  0000 C CNN
+F 0 "U710" H 1950 7300 50  0000 C CNN
+F 1 "74LS245" H 1950 7200 50  0000 C CNN
 F 2 "" H 1700 6500 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 1700 6500 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS245" H 1700 6500 50  0001 C CNN
 	1    1700 6500
 	1    0    0    -1  
 $EndComp
@@ -51,9 +51,9 @@ L 74xx:74HCT574 U702
 U 1 1 607B1E76
 P 4050 1700
 F 0 "U702" V 4200 2400 50  0000 L CNN
-F 1 "74LS02" V 4300 2350 50  0000 L CNN
+F 1 "74HCT574" V 4300 2350 50  0000 L CNN
 F 2 "" H 4050 1700 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 4050 1700 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HCT574" H 4050 1700 50  0001 C CNN
 	1    4050 1700
 	0    1    1    0   
 $EndComp
@@ -62,9 +62,9 @@ L 74xx:74HCT574 U703
 U 1 1 607B26C8
 P 6550 1700
 F 0 "U703" V 6700 2400 50  0000 L CNN
-F 1 "74LS02" V 6800 2350 50  0000 L CNN
+F 1 "74HCT574" V 6800 2350 50  0000 L CNN
 F 2 "" H 6550 1700 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 6550 1700 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HCT574" H 6550 1700 50  0001 C CNN
 	1    6550 1700
 	0    1    1    0   
 $EndComp
@@ -73,9 +73,9 @@ L 74xx:74HCT574 U711
 U 1 1 607B2E71
 P 4400 7000
 F 0 "U711" V 4650 6250 50  0000 R CNN
-F 1 "74LS02" V 4550 6350 50  0000 R CNN
+F 1 "74HCT574" V 4550 6350 50  0000 R CNN
 F 2 "" H 4400 7000 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 4400 7000 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74HCT574" H 4400 7000 50  0001 C CNN
 	1    4400 7000
 	0    -1   -1   0   
 $EndComp
@@ -84,9 +84,9 @@ L 74xx:74LS283 U708
 U 1 1 607B43C3
 P 4100 4950
 F 0 "U708" V 4250 5650 50  0000 L CNN
-F 1 "74LS02" V 4350 5600 50  0000 L CNN
+F 1 "74LS283" V 4350 5600 50  0000 L CNN
 F 2 "" H 4100 4950 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 4100 4950 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS283" H 4100 4950 50  0001 C CNN
 	1    4100 4950
 	0    1    1    0   
 $EndComp
@@ -95,9 +95,9 @@ L 74xx:74LS283 U709
 U 1 1 607B4E38
 P 6200 4950
 F 0 "U709" V 6350 5650 50  0000 L CNN
-F 1 "74LS02" V 6450 5600 50  0000 L CNN
+F 1 "74LS283" V 6450 5600 50  0000 L CNN
 F 2 "" H 6200 4950 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 6200 4950 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS283" H 6200 4950 50  0001 C CNN
 	1    6200 4950
 	0    1    1    0   
 $EndComp
@@ -106,9 +106,9 @@ L 74xx:74LS157 U706
 U 1 1 607B5AE1
 P 6800 3350
 F 0 "U706" V 6900 4150 50  0000 L CNN
-F 1 "74LS02" V 7000 4100 50  0000 L CNN
+F 1 "74LS157" V 7000 4100 50  0000 L CNN
 F 2 "" H 6800 3350 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 6800 3350 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS157" H 6800 3350 50  0001 C CNN
 	1    6800 3350
 	0    1    1    0   
 $EndComp
@@ -117,9 +117,9 @@ L 74xx:74LS157 U705
 U 1 1 607B6109
 P 4300 3350
 F 0 "U705" V 4450 4150 50  0000 L CNN
-F 1 "74LS02" V 4550 4100 50  0000 L CNN
+F 1 "74LS157" V 4550 4100 50  0000 L CNN
 F 2 "" H 4300 3350 50  0001 C CNN
-F 3 "http://www.ti.com/lit/gpn/sn74ls02" H 4300 3350 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS157" H 4300 3350 50  0001 C CNN
 	1    4300 3350
 	0    1    1    0   
 $EndComp

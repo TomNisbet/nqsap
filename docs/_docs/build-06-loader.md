@@ -7,14 +7,11 @@ excerpt: "Building the Arduino-based Loader/Debugger for the NQSAP computer"
 [![Arduino Loader](../../assets/images/loader.jpg "loader"){:width="500px"}](../../assets/images/loader.jpg)
 
 The program memory loader uses an Arduino Nano in place of manual-entry DIP switches on
-the SAP-1.  The Loader has eight of the Arduino I/O lines connected directly to the NQSAP
-host bus for read and write access.  It can select registers and also drive the CLK and
-RST lines.
-
-Beyond the ability to simply load programs into memory, the Loader can read and write all
-of the NQSAP registers. This gives the Loader the capability to perform a comprehensive
-system verification.  This system test helpful for catching wires that work themselves
-loose.
+the SAP-1.  Beyond the ability to simply load programs into memory, the Loader can read
+and write all of the NQSAP registers.  This gives the Loader the capability to perform a
+comprehensive system verification.  This system test can help catching wires that work
+themselves loose during build changes.  The Loader also functions as an interactive
+monitor/debugger for the NQSAP's target programs.
 
 The Loader writes a default program to the NQSAP memory at power up, allowing unattended
 operation.  If a USB connection is established, the Loader provides a ROM monitor-like
@@ -35,7 +32,8 @@ available via the USB interface:
   * Test all registers with a pattern that can be visually observed
   * Test all read/write registers by reading back the patterns written
   * Test memory with a set of patterns including walking bits
-  * (future) Test the ALU by writing operands and operations and verifying the result
+  * Test the ALU, DXY Adder, and Shift Register operation with a set of values and
+  operations
 
 ## Self-test
 
@@ -46,6 +44,10 @@ available via the USB interface:
 </figure>
 
 ## Loader Design
+
+The Loader has eight of the Arduino I/O lines connected directly to the NQSAP
+host bus for read and write access.  It can select registers and also drive the CLK and
+RST lines.
 
 ### Design 1 - memory access only
 
@@ -80,16 +82,17 @@ the same time.
 
 The current iteration of the Loader adds two 74LS173 4-bit registers to drive the inputs
 of the register select decoders.  The output enable of these registers is tied to the
-Loader's PGM signal and the output enable of the register-select microcode ROM is the
-inverted PGM signal, ensuring that only one source will be outputting a signal at any
-time. The Loader uses four Arduino outputs to drive the inputs of the registers (all four
-wired to both registers) and two Arduino outputs to drive the CLK lines to load a value
-into one register or the other.  This allows the Loader to select up to 15 read registers
-and 15 write registers using only 6 Arduino outputs.  
+*LDR-ACTIVE* signal and the output enable of the register-select microcode ROM is the
+inverted *LDR-ACTIVE* signal, ensuring that only one source will be outputting a signal at
+any time. The Loader uses four Arduino outputs to drive the inputs of the registers (all
+four wired to both registers) and two Arduino outputs to drive the CLK lines to load a
+value into one register or the other.  This allows the Loader to select up to 15 read
+registers and 15 write registers using only 6 Arduino outputs.  
 
 A third 74LS173 was later added so that the Loader could control additional signals.  Two
 of the bits were used for the H register HL and HR lines and two are available for
-expansion.  Any bits controlled by this new register must be from ROM 2.
+expansion.  Any bits controlled by this new register must be from ROM 2.  The addition of
+the third '173 register required only one more Arduino output to drive its CLK signal.
 
 When the Loader is active, it disables the OE lines of ROM 3 and ROM 2.  ROM 3 contains
 the 4-bit read register select and the 4-bit write register select.  ROM 2 contains the
@@ -104,11 +107,11 @@ not cycle while the loader is driving the clock.
 
 [![Loader Schematic](../../assets/images/loader-schematic.png "loader/debugger schematic logic"){:width="720px"}](../../assets/images/loader-schematic.png)
 
-The loader uses an Arduino Nano clone.  The Nano form factor was chosen over the more
-common Uno because the small form factor can be installed directly on the breadboards with
-the rest of the NQSAP.  Rather than installing male pins on the Nano, female socket strips
-were used to raise the Nano up higher than the neighboring chips.  This was done to make
-it easier to plug in and remove the USB cable.
+The Loader uses an Arduino Nano clone.  The Nano was chosen over the more common Uno
+because the small form factor can be installed directly on the breadboards with the rest
+of the NQSAP.  Rather than installing male pins on the Nano, female socket strips raise
+the Nano up higher than the neighboring chips.  This was done to make it easier to plug in
+and remove the USB cable.
 
 [![Arduino Nanos with pins and sockets](../../assets/images/arduino-nanos.jpg "Arduino Nanos"){:width="400px"}](../../assets/images/arduino-nanos.jpg) [![Loader Arduino Nano installed](../../assets/images/loader-arduino.jpg "Loader Arduino"){:width="400px"}](../../assets/images/loader-arduino.jpg)
 
@@ -120,7 +123,7 @@ so there is no way to load memory without the Arduino.
 
 The Arduino is powered from the NQSAP Vcc through a diode so that if the NQSAP is powered
 off it does not try to draw power from the Arduino's USB port.  The USB port is connected
-to the host computer with a hub that has individual power switched, allowing the host
+to the host computer with a hub that has individual port power switches, allowing the host
 computer's power to be disconnected from the NQSAP.
 
 ## Bill of Materials

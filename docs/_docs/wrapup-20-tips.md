@@ -104,3 +104,17 @@ see the results of placing filter capacitors.  The multimeter was only used to t
 voltage drops at the far ends of the power distribution rails.  Surprisingly, the logic
 analyzer was never used.  Any problems in the system were usually loose or misplaced wires
 that were easily found with just the logic probe.
+
+### Ammeter
+
+[![Ammeter](../../assets/images/ammeter.jpg "ammeter")](../../assets/images/ammeter.jpg)
+
+During the build, it was helpful to have an inexpensive ammeter connected to the power
+supply to monitor the current draw.  
+[Amazon carries several for under $10](https://www.amazon.com/Eiechip0-28-Digital-display-Volt-Meter/dp/B079L33VG2/)
+that can be found by searching for "LED ammeter".  The meter doesn't need to be terribly
+accurate, it just needs to show a large change in the current that would happen if a chip
+was installed backwards or if multiple sources are driving the bus at the same time.  It's
+a good way to catch wiring mistakes before the smoke starts leaking out of the chips.  It
+was also interesting to see the current draw gradually increase over time as more modules
+were build into the design.

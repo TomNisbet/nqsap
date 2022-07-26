@@ -40,3 +40,6 @@ different.
 The current project is trying to implement as much of the 6502 as possible using the 7x2 breadboard layout of the Ben Eater SAP-1. A majority of the 6502 instruction set is
 already in place.  Two features that are not present and are unlikely to be implemented
 are decimal mode and interrupts.  
+
+The next iteration of this project is the [NQSAP-PCB TTL computer](https://tomnisbet.github.io/nqsap-pcb/) - a modular PCB version of the NQSAP with new
+enhancements.

@@ -52,7 +52,7 @@ the PC is needed to retrieve the subroutine address, but the PC also needs to be
 onto the stack before being overwritten with the new address.  The ALU B register is used
 for temporary storage to save the subroutine address.  The B register is not directly
 accessible by the user, so it is a good candidate for the microcode to use.  See the
-[NQSAP-PCB stack pointer page](https://tomnisbet.github.io/nqsap-pcb/docs/program-counter-stack-pointer/)
+[NQSAP-PCB stack pointer page](https://tomnisbet.github.io/nqsap-pcb/docs/program-counter-stack-pointer/#microcode)
 for a more detailed explanation of the JSR instruction.
 
 ## Bill of Materials

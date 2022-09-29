@@ -34,10 +34,14 @@ Because the ALU select lines are hard-wired to the IR, there are only eight opco
 available that put the ALU in the correct mode.  To create the sixteen different opcodes
 that are needed for all of the addressing mode combinations of the subtract and compare
 instructions, a NOR gate is placed between the inverted IR output and the ALU S0 input.
-The other NOR input is the microcode ROM LS (aLu Subtract) line.  When this is asserted,
+The other NOR input is the microcode ROM LF (aLu Force) line.  When this is asserted,
 the ALU S0 is forced to zero.  This is used to create a new set of eight subtract mode
 instructions by setting the ALU select bits to 0110 when the low IR bits are 0111.  The
 ALU operation for 0111 would normally be A and not B, which isn't useful.
+
+Note that the schematic image is out of date.  The L-S0 line is shown as directly
+connected to IR-Q0.  It should instead be driven by the ALU-S0 signal that is shown on the
+[Flags](../flags/) schematic.
 
 In addition to the 74181 ALUs, the NQSAP ALU module needs a few more chips.  As with other
 read registers in the NQSAP, a 74LS245 bus transceiver is used to selectively place the

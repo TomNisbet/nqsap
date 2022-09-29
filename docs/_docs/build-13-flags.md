@@ -10,8 +10,9 @@ The processor status flags and conditional jump logic is the most complex part o
 NQSAP computer.  It consumes a large number of the available
 [microcode ROM outputs](#control-rom-summary).
 
-This design is still a work-in-progress.  Most of it has been prototyped, but a clocking
-and ROM output problem is causing the flag registers to load unpredictably.
+Most of ths design was prototyped, but a clocking and ROM output problem caused the flag
+registers to load unpredictably. The Flags design has been fully implemented in the
+[NQSAP-PCB build](https://tomnisbet.github.io/nqsap-pcb/docs/flags/).
 
 The flags and conditional jump design has the following features:
 * Four flags that match the behavior of the 6502's Carry, Zero, oVerflow, and Negative flags

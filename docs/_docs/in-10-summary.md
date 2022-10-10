@@ -31,27 +31,12 @@ cycles instead of the eight needed for a conditional branch.
 
 ## Implementation Progress
 
-Most of the instructions and all of the addressing modes listed here are already
-implemented.  The area that needs the most work is the flags.  The current design only has
-the Carry and Zero flags.  A major redesign is in progress that will add the Negative and
-Overflow flags and will expand the current flags capabilities to allow setting, clearing,
-and updating of individual flags rather than updating the entire flags register at once.
-The new design will also add new sources to the flag inputs so that, for example, the C
-flags can be updated by the shift/rotate instructions.
-
-The compare instructions are not implemented yet because they need the ALU to be in
-subtract mode.  The ALU operation select bits are hard-wired to the Instruction Register,
-so there are a limited number of opcodes that are available for each ALU operation.  The
-SBC instructions are using the subtract opcodes, so there is no room to implement the
-compate instructions.  A change will be made to allow the ALU select bits to be
-overridden to allow the compare instructions.  This is a fairly simple change, but may
-require shifting a few components to free up breadboard space.
-
 Some of the single operand memory instructions, like INC, DEC, and ASL are not available
 for the indexed addressing modes because they require too many instruction cycles.  These
 instructions need to save and restore the A register and that can't be done in the eight
 cycles available.  A register/flags redesign could fix this.  Another possibility is to
 extend the maximum microinstruction cycles from eight to sixteen.
+
 ## Instructions Common to 6502 and NQSAP
 
 |Name|Description|Flags|Address Modes|

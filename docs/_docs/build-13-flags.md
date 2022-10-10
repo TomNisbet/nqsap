@@ -10,8 +10,9 @@ The processor status flags and conditional jump logic is the most complex part o
 NQSAP computer.  It consumes a large number of the available
 [microcode ROM outputs](#control-rom-summary).
 
-This design is still a work-in-progress.  Most of it has been prototyped, but a clocking
-and ROM output problem is causing the flag registers to load unpredictably.
+Most of ths design was prototyped, but a clocking and ROM output problem caused the flag
+registers to load unpredictably. The Flags design has been fully implemented in the
+[NQSAP-PCB build](https://tomnisbet.github.io/nqsap-pcb/docs/flags/).
 
 The flags and conditional jump design has the following features:
 * Four flags that match the behavior of the 6502's Carry, Zero, oVerflow, and Negative flags
@@ -194,11 +195,11 @@ The table below shows the usage of the carry flag for each instruction.
 The input to the Carry flag is described in the [Flag Calculations](#flag-calculations)
 section.  
 
-The output of the Carry flag to the ALU and H register is controlled by the LC and LS
+The output of the Carry flag to the ALU and H register is controlled by the CC and CS
 lines from the Control ROM.  These two lines can force a clear or set value or just pass
 through the current value of the Carry flag.  Note that the ALU uses negative logic for
 the carry flag, so the inverted value of the Carry flag is used.  The inverter is placed
-after the LC and LS logic, so asserting LS will present a LOW to the ALU and LC will
+after the CC and CS logic, so asserting CS will present a LOW to the ALU and CC will
 present a HIGH.
 
 ## Control ROM Summary
@@ -215,8 +216,8 @@ The table below shows the Control ROM lines related to flags.
 | JC   | jump conditional       |
 | C0   | carry source select 0  |
 | C1   | carry source select 1  |
-| LC   | ALU carry input clear  |
-| LC   | ALU carry input clear  |
+| CC   | ALU carry input clear  |
+| CS   | ALU carry input set    |
 |====
 
 ## Bill of Materials

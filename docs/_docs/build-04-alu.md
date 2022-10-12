@@ -89,17 +89,17 @@ ALU output.  The ALU does have an _A=B_ bit that can be used for comparison oper
 but it is not used in the NQSAP design.
 
 **Update:** the NOR/AND solution was replaced with a single 74HCT688 8-bit comparator.
-*One set of inputs is tied low, so the comparator matches when the other set of inputs are
-*all zero. In addition, the inputs of the comparator are now tied to the bus instead of
-*the ALU output, so the zero detect can be used with non-ALU operations like register
-*loads or transfers.
+One set of inputs is tied low, so the comparator matches when the other set of inputs are
+all zero. In addition, the inputs of the comparator are now tied to the bus instead of
+the ALU output, so the zero detect can be used with non-ALU operations like register
+loads or transfers.
 
 ### Carry flag
 
-Using the carry flag output (C<sub>n+4</sub>) as a processor flag is not straightforward
-to understand because the logic state used to indicate an overflow changes depending on
-the operation.  For the addition operations, a logic LOW indicates carry occurred, but
-logic HIGH is used to indicate borrow needed for subtraction.  See the
+Using the 74LS181's carry flag output (C<sub>n+4</sub>) as a processor flag is not
+straightforward to understand because the logic state used to indicate an overflow changes
+depending on the operation.  For the addition operations, a logic LOW indicates carry
+occurred, but logic HIGH is used to indicate borrow needed for subtraction.  See the
 [74181 ALU notes](../74181-alu-notes/) section for an explanation of why the chip does
 this.
 
@@ -124,14 +124,6 @@ if the subtraction required a borrow from the non-existent ninth bit.
 This usage is consistent with the 74181 ALU, but the use of the flag is inverted because
 the 74181 uses an active low carry signal.  The C<sub>n+4</sub> carry out signal from the
 high ALU is inverted to provide the 6502-like flag.
-
-The flags are currently implemented with a single 74173 4-bit flags register, meaning that
-any operation that needs to set flags will set them all.  This will be replaced with
-individual D flip flops. This will require more microcode control lines, but will offer
-granular control over when the flags change. It will also allow instructions to set or
-reset individual flags.  This is particularly important because the addition and
-subtraction instructions always use the carry flag, so a clear carry is needed to do an
-initial add or subtract operation.
 
 ## Bill of Materials
 

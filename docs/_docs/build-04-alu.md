@@ -18,8 +18,8 @@ Instruction Register, so that the opcode of the instruction directly determines 
 operation selected on the ALU.  This saves the need for 5 additional control lines from
 the microcode ROMs.  It also makes the microcode for all ALU operations identical, so they
 can be generated programmatically in the Arduino code.  Because the Mode and Select lines
-are wired to the Instruction Register, only the Carry-in signal is connected to the
-microcode ROMs.
+are wired to the Instruction Register, only the Carry-in signal needs to be provided to
+control the selected ALU function.
 
 [![NQSAP ALU schematic)](../../assets/images/alu-schematic.png "ALU schematic"){:width="400px"}](../../assets/images/alu-schematic.png)
 
@@ -74,31 +74,11 @@ The B operation is no longer used.  It was used by the CALL instruction to read 
 temporary storage.  The B register was later redesigned to add its own bus transceiver to
 allow direct read access.
 
-## Flags
-
-A status register, containing a zero flag and a carry flag, is used to store results from
-ALU operations.  The status register is loaded by a control line from the microcode ROM.
-The two outputs of the status register drive the _A<sub>13</sub>_ and _A<sub>14</sub>_
-address lines of the microcode ROMs.
-
-### Zero flag
-
-The 74181 ALU does not have an output to indicate a zero result from an operation so a
-few NOR and AND gates are used (as in the Ben Eater design) to detect all zeroes at the
-ALU output.  The ALU does have an _A=B_ bit that can be used for comparison operations,
-but it is not used in the NQSAP design.
-
-**Update:** the NOR/AND solution was replaced with a single 74HCT688 8-bit comparator.
-One set of inputs is tied low, so the comparator matches when the other set of inputs are
-all zero. In addition, the inputs of the comparator are now tied to the bus instead of
-the ALU output, so the zero detect can be used with non-ALU operations like register
-loads or transfers.
-
-### Carry flag
+## Carry flag
 
 Using the 74LS181's carry flag output (C<sub>n+4</sub>) as a processor flag is not
-straightforward to understand because the logic state used to indicate an overflow changes
-depending on the operation.  For the addition operations, a logic LOW indicates carry
+straightforward to understand because the logic state used to indicate an overflow is
+dependent on the operation.  For the addition operations, a logic LOW indicates carry
 occurred, but logic HIGH is used to indicate borrow needed for subtraction.  See the
 [74181 ALU notes](../74181-alu-notes/) section for an explanation of why the chip does
 this.

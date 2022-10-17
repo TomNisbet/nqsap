@@ -20,31 +20,43 @@ operation of the 173's, but added shift capabilities to enable the LSR, ROL, and
 instructions.
 
 The shift register has two control lines that select parallel load, shift left, shift
-right, or no-operation.  These are wired to the ROM and labelled HR and HL.  An additional
-ROM line called HC controls the carry-in of the shift register, selecting zero or the
-carry flag register as the source.
+right, or no-operation.  These are wired to the ROM and labelled HR and HL.  The carry-in
+value to the shift registers can come from the carry flag register or it can be forced to
+zero using the CC control signal.  Note that the CC and CS carry force signals are shown
+on the Flags schematic using the old notations of LC and LS.
 
 When the shift register was added. the ALU-A and accumulator functions were split into two
 registers.  The shift register connected to the ALU A inputs is now labelled as H (sHift
-register). A separate A register, the user-accessible accumulator, was added  using a
+register). A separate A register, the user-accessible accumulator, was added using a
 74HCT574 8-bit register and a 74HCT245 bus transceiver.  The A register is not connected
 to the ALU and does not need to be physically near the ALU chips.  It is on the same board
 as the RAM chip because there was free space available at that spot.
 
 The H register's write operation is not controlled by the usual memory select circuit, so
-it can be written at the same time as any other register.  By convention, the microcode
-always writes H whenever it writes A, so H will always have the same value as A at the
-start of a new instruction.  The microcode is free to use H independently, but it must be
-restored from A at the end of the instruction.
+it can be written at the same time as any other register.   The HL and HR lines can also
+be controlled by the Loader, allowing a self test of H.  The test includes the usual
+register read/write and also verifies the shift functionality.
 
-The HL and HR lines can also be controlled by the Loader, allowing a self test of H.  The
-test includes the usual register read right and also tests the shift functionality.
+By convention, the microcode always writes H whenever it writes A, so H will always have
+the same value as A at the start of a new instruction.  The microcode is free to use H
+independently, but it must be restored from A at the end of the instruction.
 
-The A and H register split was done so that memory instructions could use the H register
-without disturbing the accumulator.  With a maximum of eight microinstructions per
-instruction, there was not enough space to implement instructions like INC and ROR using
-memory operands.  One microinstruction was saved because the value of H does not need to
-be saved for temporary use - it is always available to be restored from A.
+The independent A and H registers allow memory instructions to use the H register without
+disturbing the accumulator.  For example, the AB_ROR instruction can fetch a value from
+memory directly into H, shift it right, and then write it back out to memory without
+disturbing the contents of the A register.  Even with this optimization, there are still
+some instructions that could not be implemented using the maximum of eight
+microinstructions per instruction.  Some indexed memory instructions, like AX_ROR, would
+require nine microinstruction steps.
+
+
+The next revision of the NQSAP computer,
+[NQSAP-PCB](https://tomnisbet.github.io/nqsap-pcb/docs/ab-registers/), does away with the
+shift register and uses a much simpler implementation for right shift.  On NQSAP-PCB, the
+right shift operation is accomplished using a second bus transceiver wired to the B
+register and offset by one bit position.  This wires bit B7 to Bus6, B6 to Bus5 and so on.
+The left shift is implemented using the ALU's built-in A+A operator.  The NQSAP-PCB also
+expanded the step counter to four bits, allowing sixteen microinstruction steps.
 
 ## B Register
 

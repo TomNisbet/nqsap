@@ -103,6 +103,13 @@ Loader is active.
 The Loader Active signal is also used to hold the Ring Counter in reset so that it does
 not cycle while the loader is driving the clock.
 
+### Design Update
+
+The NQSAP-PCB project has an [even newer design for the Loader](https://tomnisbet.github.io/nqsap-pcb/docs/loader/) 
+that uses 74HC595 shift registers to override all of the control signals from the Microcode ROMs.
+This is similar to the 74LS173 design, but uses fewer pins to control more signals.  The Loader hardware 
+is very similar to the Arduino EEPROM programmer used to make the Microcode ROMs.
+
 ## Loader implementation
 
 [![Loader Schematic](../../assets/images/loader-schematic.png "loader/debugger schematic logic"){:width="720px"}](../../assets/images/loader-schematic.png)
